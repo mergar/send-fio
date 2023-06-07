@@ -2,4 +2,5 @@
 pgm="${0##*/}"          # Program basename
 progdir="${0%/*}"       # Program directory
 
-${progdir}/run-fio.sh && ${progdir}/send-fio.sh
+${progdir}/run-fio && ${progdir}/send-fio
+
