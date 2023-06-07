@@ -593,7 +593,7 @@ log "INIT" "Connected to ${checkin_server_description}"
 
 # prepare
 get_id_token
-ret=$?
+_ret=$?
 
 #exit 0
 
@@ -601,8 +601,9 @@ ret=$?
 enable_token
 report_system
 
-
 # optional parts
 #       report_devices
 #       report_cpu
 disable_token
+
+exit ${_ret}
