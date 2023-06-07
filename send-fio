@@ -568,6 +568,8 @@ report_system()
 		fi
 	fi
 
+	OPSYS=$( uri_escape $( echo "${OPSYS}" ) )
+
 	# FIO
 	TYPE="fio"
 	PROFILE="randread.fio"
