@@ -1,0 +1,16 @@
+[FIOJOB]
+directory=/tmp/test
+ioengine=posixaio
+rw=randread
+size=2g
+bs=4k
+iodepth=1
+numjobs=2
+runtime=60
+loops=1
+direct=1
+log_avg_msec=1000
+invalidate=1
+write_bw_log=tests/4k/randread-iodepth-1-numjobs-2
+write_lat_log=tests/4k/randread-iodepth-1-numjobs-2
+write_iops_log=tests/4k/randread-iodepth-1-numjobs-2
