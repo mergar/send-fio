@@ -540,7 +540,7 @@ report_system()
 					is_virtual="BHYVE"
 					;;
 				*)
-					is_virtual="NO"
+					is_virtual="NONE"
 					;;
 			esac
 			_jailed=$( ${SYSCTL_CMD} -n security.jail.jailed )
