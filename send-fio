@@ -554,7 +554,20 @@ report_system()
 			DEV=$( uri_escape $(echo "${line}" | ${CUT_CMD} -d ' ' -f 3- ))
 			;;
 	esac
-	
+
+	if [ -r /etc/os-release ]; then
+		NAME=
+		PRETTY_NAME=
+		. /etc/os-release
+		if [ -n "${PRETTY_NAME}" ]; then
+			OPSYS="${PRETTY_NAME}"
+		elif [ -n "${NAME}" ]; then
+			OPSYS="${NAME}"
+		else
+			OPSYS="${OS}"
+		fi
+	fi
+
 	# FIO
 	TYPE="fio"
 	PROFILE="randread.fio"
@@ -574,7 +587,7 @@ report_system()
 
 
 	echo_begin "Posting perf statistics to ${checkin_server_description}"
-	do_http_request_check_status "GET" "/scripts/report_system.php?token=${TOKEN}&key=${KEY}&rel=${REL}&arch=${ARCH}&opsys=${OS}&cpus=${count}&vendor=${VEN}&cpu_type=${DEV}&is_virtual=${is_virtual}&bench_type=${TYPE}&bench_profile=${PROFILE}&fio_bw_mb=${MB}&fio_bw_kb=${KB}" "" "" "OS statistics submission"
+	do_http_request_check_status "GET" "/scripts/report_system.php?token=${TOKEN}&key=${KEY}&rel=${REL}&arch=${ARCH}&opsys=${OPSYS}&cpus=${count}&vendor=${VEN}&cpu_type=${DEV}&is_virtual=${is_virtual}&bench_type=${TYPE}&bench_profile=${PROFILE}&fio_bw_mb=${MB}&fio_bw_kb=${KB}" "" "" "OS statistics submission"
 	echo_end_success
 	log "INFO" "Posted OS statistics to ${checkin_server_description}"
 }

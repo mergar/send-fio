@@ -32,6 +32,8 @@ fio
 tail
 tee
 sysctl
+truncate
+mount
 awk
 sed
 cut
@@ -109,6 +111,40 @@ if [ -z "${PROFILE}" ]; then
 	exit 1
 fi
 
+if [ -r /etc/os-release ]; then
+	NAME=
+	PRETTY_NAME=
+	. /etc/os-release
+	if [ -n "${PRETTY_NAME}" ]; then
+		OPSYS="${PRETTY_NAME}"
+	elif [ -n "${NAME}" ]; then
+		OPSYS="${NAME}"
+	else
+		OPSYS="${OS}"
+	fi
+fi
+
+echo "OPSYS: $OPSYS"
+if [ "${OPSYS}" = "SpaceVM" ]; then
+	${TRUNCATE_CMD} -s0 /tmp/run-fio-spacevm-volumes.conf
+	trap "${RM_CMD} -f /tmp/run-fio-spacevm-volumes.conf" HUP INT ABRT BUS TERM EXIT
+	${MOUNT_CMD} | ${GREP_CMD} "on /storages/" | while read _src _on _mnt _type _fs _nop; do
+		#echo "s:${_src} o:${_on} m:${_mnt} t:${_type} f:[${_fs}]"
+		case "${_fs}" in
+			gfs2|zfs)
+				echo "found pool [${_fs}]: ${_mnt}"
+				echo "${_fs} ${_mnt}" >> /tmp/run-fio-spacevm-volumes.conf
+				;;
+		esac
+	done
+	#systemd-1 on /storages/gfs2/gfs2_3053831c type autofs (rw,relatime,fd=61,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=35865)
+	#systemd-1 on /storages/gfs2/gfs2_6f66bb21 type autofs (rw,relatime,fd=62,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=34844)
+	#/dev/mapper/veil_sys_vg01-local_storage on /storages/local type ext4 (rw,relatime,stripe=64)
+	#z150_11 on /storages/zfs/z150_11 type zfs (rw,noatime,xattr,posixacl)
+	#/dev/mapper/3600143801259dcf30001000001640000 on /storages/gfs2/gfs2_3053831c type gfs2 (rw,noatime,nodiratime,debug,x-systemd.automount,_netdev)
+fi
+
+
 BENCH_CONFIG="${BENCH_SRV_URL}/${TYPE}/${PROFILE}"
 
 ${CURL_CMD} -s -o /tmp/profile.conf.tpl ${BENCH_CONFIG} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
@@ -140,12 +176,16 @@ ${MV_CMD} /tmp/profile.conf.tpl /tmp/profile.fio
 ${MKDIR_CMD} -p ${progdir}/fio/tests/4k
 
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
-	[ -d ${FIO_DIRECTORY} ] && ${RM_CMD} -rf /tmp/test
+	[ -d "${FIO_DIRECTORY}" ] && ${RM_CMD} -rf "${FIO_DIRECTORY}"
 fi
-${MKDIR_CMD} ${FIO_DIRECTORY}
+${MKDIR_CMD} "${FIO_DIRECTORY}"
 
 echo "${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio"
 ${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio
 _ret=$?
+
+if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
+	[ -d "${FIO_DIRECTORY}" ] && ${RM_CMD} -rf "${FIO_DIRECTORY}"
+fi
 
 exit ${_ret}
