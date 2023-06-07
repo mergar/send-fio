@@ -28,15 +28,15 @@ for i in ${MAIN_CMD}; do
 	eval "${MY_CMD}=\"${mycmd}\""
 done
 
-if [ ! -r ${progdir}/fio/tests/4k/randread-1-2.json ]; then
-	echo "No such result: ${progdir}/fio/tests/4k/randread-1-2.json"
+if [ ! -r ${progdir}/../fio/tests/4k/randread-1-2.json ]; then
+	echo "No such result: ${progdir}/../fio/tests/4k/randread-1-2.json"
 	exit 1
 else
-	echo "Using: ${progdir}/fio/tests/4k/randread-1-2.json"
+	echo "Using: ${progdir}/../fio/tests/4k/randread-1-2.json"
 fi
-READ_BW_BYTES=$( ${CAT_CMD} ${progdir}/fio/tests/4k/randread-1-2.json | ${JQ_CMD} '.jobs[0].read.bw_bytes' | ${TR_CMD} -d '"' )
-WRITE_BW_BYTES=$( ${CAT_CMD} ${progdir}/fio/tests/4k/randread-1-2.json | ${JQ_CMD} '.jobs[0].write.bw_bytes' | ${TR_CMD} -d '"' )
-RUNTIME=$( ${CAT_CMD} ${progdir}/fio/tests/4k/randread-1-2.json | ${JQ_CMD} '.jobs[0]."job options".runtime' | ${TR_CMD} -d '"' )
+READ_BW_BYTES=$( ${CAT_CMD} ${progdir}/../fio/tests/4k/randread-1-2.json | ${JQ_CMD} '.jobs[0].read.bw_bytes' | ${TR_CMD} -d '"' )
+WRITE_BW_BYTES=$( ${CAT_CMD} ${progdir}/../fio/tests/4k/randread-1-2.json | ${JQ_CMD} '.jobs[0].write.bw_bytes' | ${TR_CMD} -d '"' )
+RUNTIME=$( ${CAT_CMD} ${progdir}/../fio/tests/4k/randread-1-2.json | ${JQ_CMD} '.jobs[0]."job options".runtime' | ${TR_CMD} -d '"' )
 
 echo $READ_BW_BYTES
 echo $WRITE_BW_BYTES
