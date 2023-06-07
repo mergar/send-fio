@@ -521,6 +521,7 @@ report_system()
 {
 	local REL=$( uri_escape $( ${UNAME_CMD} -r ) )
 	local ARCH=$( ${UNAME_CMD} -m )
+	local is_virtual= _jailed=
 
 	case "${OS}" in
 		FreeBSD)
@@ -528,8 +529,25 @@ report_system()
 			local VEN=$(echo $line | ${CUT_CMD} -d ' ' -f 1)
 			local DEV=$(uri_escape $(echo $line | ${CUT_CMD} -d ' ' -f 2-))
 			local count=$(${SYSCTL_CMD} -n hw.ncpu)
+			case "$(kenv smbios.system.product)" in
+				VirtualBox)
+					is_virtual="VIRTUALBOX"
+					;;
+				VMware*)
+					is_virtual="VMWARE"
+					;;
+				BHYVE)
+					is_virtual="BHYVE"
+					;;
+				*)
+					is_virtual="NO"
+					;;
+			esac
+			_jailed=$( ${SYSCTL_CMD} -n security.jail.jailed )
+			[ "${_jailed}" = "1" ] && is_virtual="jail"
 			;;
 		Linux)
+			is_virtual=$( systemd-detect-virt | ${TR_CMD} '[:lower:]' '[:upper:]' )
 			local line=$( ${GREP_CMD} "^model name" /proc/cpuinfo | ${HEAD_CMD} -n1 | ${CUT_CMD} -d ':' -f 2 )
 			local VEN=$(echo ${line} | ${AWK_CMD} '{printf $1}' )
 			local count=$( grep ^processor /proc/cpuinfo | ${WC_CMD} -l | ${AWK_CMD} '{printf $1}' )
@@ -556,7 +574,7 @@ report_system()
 
 
 	echo_begin "Posting perf statistics to ${checkin_server_description}"
-	do_http_request_check_status "GET" "/scripts/report_system.php?token=${TOKEN}&key=${KEY}&rel=${REL}&arch=${ARCH}&opsys=${OS}&cpus=${count}&vendor=${VEN}&cpu_type=${DEV}&bench_type=${TYPE}&bench_profile=${PROFILE}&fio_bw_mb=${MB}&fio_bw_kb=${KB}" "" "" "OS statistics submission"
+	do_http_request_check_status "GET" "/scripts/report_system.php?token=${TOKEN}&key=${KEY}&rel=${REL}&arch=${ARCH}&opsys=${OS}&cpus=${count}&vendor=${VEN}&cpu_type=${DEV}&is_virtual=${is_virtual}&bench_type=${TYPE}&bench_profile=${PROFILE}&fio_bw_mb=${MB}&fio_bw_kb=${KB}" "" "" "OS statistics submission"
 	echo_end_success
 	log "INFO" "Posted OS statistics to ${checkin_server_description}"
 }
