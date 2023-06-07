@@ -146,5 +146,6 @@ ${MKDIR_CMD} ${FIO_DIRECTORY}
 
 echo "${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio"
 ${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio
+_ret=$?
 
-#echo "cd /tmp; fio --output-format=json /tmp/profile.conf > randread.json"
+exit ${_ret}
