@@ -529,7 +529,8 @@ report_system()
 			local VEN=$(echo $line | ${CUT_CMD} -d ' ' -f 1)
 			local DEV=$(uri_escape $(echo $line | ${CUT_CMD} -d ' ' -f 2-))
 			local count=$(${SYSCTL_CMD} -n hw.ncpu)
-			case "$(kenv smbios.system.product)" in
+			local smbios="$(kenv smbios.system.product)"
+			case "${smbios}" in
 				VirtualBox)
 					is_virtual="VIRTUALBOX"
 					;;
@@ -540,7 +541,7 @@ report_system()
 					is_virtual="BHYVE"
 					;;
 				*)
-					is_virtual="NONE"
+					is_virtual="NONE(${smbios})"
 					;;
 			esac
 			_jailed=$( ${SYSCTL_CMD} -n security.jail.jailed )
@@ -569,6 +570,7 @@ report_system()
 	fi
 
 	OPSYS=$( uri_escape $( echo "${OPSYS}" ) )
+	is_virtual=$( uri_escape $( echo "${is_virtual}" ) )
 
 	# FIO
 	TYPE="fio"
