@@ -533,7 +533,7 @@ report_system()
 			local line=$( ${GREP_CMD} "^model name" /proc/cpuinfo | ${HEAD_CMD} -n1 | ${CUT_CMD} -d ':' -f 2 )
 			local VEN=$(echo ${line} | ${AWK_CMD} '{printf $1}' )
 			local count=$( grep ^processor /proc/cpuinfo | ${WC_CMD} -l | ${AWK_CMD} '{printf $1}' )
-			DEV=$( uri_escape $(echo "${line}" | ${CUT_CMD} -d ' ' -f 2- ))
+			DEV=$( uri_escape $(echo "${line}" | ${CUT_CMD} -d ' ' -f 3- ))
 			;;
 	esac
 	
