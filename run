@@ -1,6 +1,51 @@
 #!/bin/sh
-pgm="${0##*/}"          # Program basename
-progdir="${0%/*}"       # Program directory
+# Send FIO statistics to perf server
+pgm="${0##*/}"		# Program basename
+progdir="${0%/*}"	# Program directory
 
-${progdir}/run-fio && ${progdir}/send-fio
+# options
+#
+export PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
+CURR_VERSION="0.1"
+USE_TOR=NO
+DO_LOG_NET_TRAFFIC=1
 
+set -e
+. ${progdir}/config
+. ${progdir}/subr/system.subr
+. ${progdir}/subr/network.subr
+set +e
+
+
+# main loop. can be overriden via subr/${OPSYS}.subr
+fio_loop()
+{
+	${progdir}/run-fio && ${progdir}/send-fio
+	_ret=$?
+	return ${_ret}
+}
+
+
+## MAIN
+echo "OS: ${OS}"
+echo "OPSYS: ${OPSYS}"
+
+# network setup
+setup_proxies
+
+echo "Checkin server: ${checkin_server}"
+url="${checkin_server}"
+
+_ret=0
+test_connection
+
+log "INIT" "Connected to ${checkin_server_description}"
+
+if [ -r "${progdir}/subr/${OPSYS}.subr" ]; then
+	. "${progdir}/subr/${OPSYS}.subr"
+fi
+
+fio_loop
+ret=$?
+
+exit ${ret}

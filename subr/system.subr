@@ -1,0 +1,90 @@
+if [ ! "$_SYSTEM_SUBR" ]; then
+_SYSTEM_SUBR=1
+###
+
+UNAME_CMD=$( which uname )
+if [ ! -x "${UNAME_CMD}" ]; then
+	echo "error: no such command: uname"
+	exit 1
+fi
+
+TR_CMD=$( which tr )
+if [ ! -x "${TR_CMD}" ]; then
+	echo "error: no such command: tr"
+	exit 1
+fi
+
+OS=$( ${UNAME_CMD} -s )
+
+# generic mandatory tools/script
+MAIN_CMD="
+awk
+cat
+chmod
+curl
+cut
+fio
+grep
+head
+jq
+mkdir
+mount
+mv
+openssl
+rm
+sed
+sysctl
+tail
+tee
+truncate
+wc
+whoami
+"
+
+if [ "${USE_TOR}" = "YES" ]; then
+	MAIN_CMD="${MAIN_CMD} nc"
+fi
+
+for i in ${MAIN_CMD}; do
+	mycmd=
+	mycmd=$( which ${i} )
+	if [ ! -x "${mycmd}" ]; then
+		echo "${pgm} error: no such executable dependency/requirement: ${i}"
+		exit 1
+	fi
+	MY_CMD=$( echo ${i} | ${TR_CMD} '\-[:lower:]' '_[:upper:]' )
+	MY_CMD="${MY_CMD}_CMD"
+	eval "${MY_CMD}=\"${mycmd}\""
+done
+
+MY_USER=$( ${WHOAMI_CMD} )
+if [ "${MY_USER}" != "root" ]; then
+	echo "${pgm} error: needs root privileges, my user: ${MY_USER}"
+	exit 1
+fi
+
+if [ -r /etc/os-release ]; then
+	NAME=
+	PRETTY_NAME=
+	. /etc/os-release
+	if [ -n "${NAME}" ]; then
+		OPSYS="${NAME}"
+	elif [ -n "${PRETTY_NAME}" ]; then
+		OPSYS="${PRETTY_NAME}"
+	else
+		OPSYS="${OS}"
+	fi
+fi
+
+case "${OS}" in
+	Linux)
+		# Linux require -i'', not -i ' '
+		sed_delimer=
+		;;
+	FreeBSD)
+		sed_delimer=" "
+		;;
+esac
+
+###
+fi

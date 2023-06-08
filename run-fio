@@ -1,79 +1,12 @@
 #!/bin/sh
-pgm="${0##*/}"          # Program basename
-progdir="${0%/*}"       # Program directory
+pgm="${0##*/}"		# Program basename
+progdir="${0%/*}"	# Program directory
 
-# options
-#
-export PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
-BENCH_SRV_URL="https://perf.beeru.online"
-BENCH_CONF_URL="${BENCH_SRV_URL}/test.conf"
-
-UNAME_CMD=$( which uname )
-if [ ! -x "${UNAME_CMD}" ]; then
-	echo "error: no such command: uname"
-	exit 1
-fi
-
-TR_CMD=$( which tr )
-if [ ! -x "${TR_CMD}" ]; then
-	echo "error: no such command: tr"
-	exit 1
-fi
-
-OS=$( ${UNAME_CMD} -s )
-
-# generic mandatory tools/script
-MAIN_CMD="
-cat
-grep
-head
-mkdir
-fio
-tail
-tee
-sysctl
-truncate
-mount
-awk
-sed
-cut
-chmod
-wc
-mv
-rm
-curl
-jq
-openssl
-whoami
-"
-
-case "${OS}" in
-	Linux)
-		# Linux require -i'', not -i ' '
-		sed_delimer=
-		;;
-	FreeBSD)
-		sed_delimer=" "
-		;;
-esac
-
-for i in ${MAIN_CMD}; do
-	mycmd=
-	mycmd=$( which ${i} )
-	if [ ! -x "${mycmd}" ]; then
-		echo "${pgm} error: no such executable dependency/requirement: ${i}"
-		exit 1
-	fi
-	MY_CMD=$( echo ${i} | ${TR_CMD} '\-[:lower:]' '_[:upper:]' )
-	MY_CMD="${MY_CMD}_CMD"
-	eval "${MY_CMD}=\"${mycmd}\""
-done
-
-MY_USER=$( ${WHOAMI_CMD} )
-if [ "${MY_USER}" != "root" ]; then
-	echo "${pgm} error: needs root privileges, my user: ${MY_USER}"
-	exit 1
-fi
+set -e
+. ${progdir}/config
+. ${progdir}/subr/system.subr
+. ${progdir}/subr/network.subr
+set +e
 
 ## FIO_ MACROS/PARAMS
 FIO_PARAMS="
@@ -88,7 +21,8 @@ SIZE
 IODEPTH
 "
 
-${CURL_CMD} -s -o /tmp/test.conf ${BENCH_CONF_URL} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
+echo "${CURL_CMD} -o /tmp/test.conf ${BENCH_CONF_URL}"
+${CURL_CMD} -o /tmp/test.conf ${BENCH_CONF_URL} > /tmp/curl.$$ 2>&1
 ret=$?
 
 trap "${RM_CMD} -f /tmp/curl.$$" HUP INT ABRT BUS TERM EXIT
@@ -97,6 +31,9 @@ if [ ${ret} -ne 0 ]; then
 	echo "curl error: ${ret}"
 	${CAT_CMD} /tmp/curl.$$
 	exit 1
+else
+	echo "fetched config:"
+	cat /tmp/test.conf
 fi
 
 unset TYPE PROFILE
@@ -124,40 +61,25 @@ if [ -r /etc/os-release ]; then
 	fi
 fi
 
-echo "OPSYS: $OPSYS"
-if [ "${OPSYS}" = "SpaceVM" ]; then
-	${TRUNCATE_CMD} -s0 /tmp/run-fio-spacevm-volumes.conf
-	trap "${RM_CMD} -f /tmp/run-fio-spacevm-volumes.conf" HUP INT ABRT BUS TERM EXIT
-	${MOUNT_CMD} | ${GREP_CMD} "on /storages/" | while read _src _on _mnt _type _fs _nop; do
-		#echo "s:${_src} o:${_on} m:${_mnt} t:${_type} f:[${_fs}]"
-		case "${_fs}" in
-			gfs2|zfs)
-				echo "found pool [${_fs}]: ${_mnt}"
-				echo "${_fs} ${_mnt}" >> /tmp/run-fio-spacevm-volumes.conf
-				;;
-		esac
-	done
-	#systemd-1 on /storages/gfs2/gfs2_3053831c type autofs (rw,relatime,fd=61,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=35865)
-	#systemd-1 on /storages/gfs2/gfs2_6f66bb21 type autofs (rw,relatime,fd=62,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=34844)
-	#/dev/mapper/veil_sys_vg01-local_storage on /storages/local type ext4 (rw,relatime,stripe=64)
-	#z150_11 on /storages/zfs/z150_11 type zfs (rw,noatime,xattr,posixacl)
-	#/dev/mapper/3600143801259dcf30001000001640000 on /storages/gfs2/gfs2_3053831c type gfs2 (rw,noatime,nodiratime,debug,x-systemd.automount,_netdev)
-fi
+BENCH_CONFIG="${checkin_server}/${TYPE}/${PROFILE}"
 
-
-BENCH_CONFIG="${BENCH_SRV_URL}/${TYPE}/${PROFILE}"
-
-${CURL_CMD} -s -o /tmp/profile.conf.tpl ${BENCH_CONFIG} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
+${CURL_CMD} -o /tmp/profile.conf.tpl ${BENCH_CONFIG} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
 ret=$?
 if [ ${ret} -ne 0 ]; then
 	echo "curl error: ${ret}"
 	${CAT_CMD} /tmp/curl.$$
 	exit 1
 fi
+${RM_CMD} /tmp/curl.$$
 
 TYPE_UPPER=$( echo "${TYPE}" | ${TR_CMD} '[:lower:]' '[:upper:]' )
 
 eval MY_PARAMS="\$${TYPE_UPPER}_PARAMS"
+
+# overrides
+#FIO_DIRECTORY="/storages/local${FIO_DIRECTORY}"
+#FIO_DIRECTORY="/storages/zfs/z150_12${FIO_DIRECTORY}"
+#FIO_IOENGINE="libaio"
 
 if [ -n "${MY_PARAMS}" ]; then
 	for i in ${MY_PARAMS}; do
@@ -170,15 +92,27 @@ if [ -n "${MY_PARAMS}" ]; then
 fi
 
 ${MV_CMD} /tmp/profile.conf.tpl /tmp/profile.fio
+echo "FIO_DIR: ${FIO_DIRECTORY}"
 
-#MYTEST="${progdir}/randread-1-2.fio"
 [ -d ${progdir}/fio/tests ] && ${RM_CMD} -rf ${progdir}/fio/tests
 ${MKDIR_CMD} -p ${progdir}/fio/tests/4k
 
+# VEIL
+#IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
+#echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > ${progdir}/fio/tests/extra_info.txt
+
+echo "CHECK for: ${FIO_DIRECTORY}/job.0.0"
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
-	[ -d "${FIO_DIRECTORY}" ] && ${RM_CMD} -rf "${FIO_DIRECTORY}"
+	if [ -d "${FIO_DIRECTORY}" ]; then
+		if [ -r "${FIO_DIRECTORY}/job.0.0" ]; then
+			echo "Clean dir: ${FIO_DIRECTORY}"
+			${RM_CMD} -rf "${FIO_DIRECTORY}"
+		else
+			echo "no such dir for clean?: ${FIO_DIRECTORY}"
+		fi
+	fi
 fi
-${MKDIR_CMD} "${FIO_DIRECTORY}"
+${MKDIR_CMD} -p "${FIO_DIRECTORY}"
 
 CBSD_PERF_DISTRO=
 [ -r /etc/rc.conf ] && . /etc/rc.conf
@@ -192,8 +126,8 @@ echo "${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-
 ${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio
 _ret=$?
 
-if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
-	[ -d "${FIO_DIRECTORY}" ] && ${RM_CMD} -rf "${FIO_DIRECTORY}"
-fi
+#if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
+#	[ -d "${FIO_DIRECTORY}" ] && ${RM_CMD} -rf "${FIO_DIRECTORY}"
+#fi
 
 exit ${_ret}
