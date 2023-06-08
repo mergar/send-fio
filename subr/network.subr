@@ -35,9 +35,11 @@ nlog()
 {
 	if [ ${DO_LOG_NET_TRAFFIC} -eq 1 ]; then
 		echo "--$(date)--" >> /tmp/send-perf-stats.$1.log
-		${TEE_CMD} -a /tmp/send-perf-stats.$1.log
-	else
-		${CAT_CMD}
+		if [ "${1}" = "in" ]; then
+			${TEE_CMD} -a /tmp/send-perf-stats.$1.log
+		else
+			${CAT_CMD} >> /tmp/send-perf-stats.$1.log
+		fi
 	fi
 }
 
@@ -104,6 +106,9 @@ ${CURL_CMD} ${_curl_args} "${checkin_server}${url}" >> /tmp/curl.$$ 2>&1
 EOF
 	_ret=$?
 	${CAT_CMD} /tmp/curl.$$ | nlog "in"
+
+	resp=$( ${CAT_CMD} /tmp/curl.$$ )
+
 	${RM_CMD} /tmp/curl.$$
 	if [ ${_ret} -ne 0 ]; then
 		if [ ${do_log} -ne 0 ]; then
@@ -112,14 +117,18 @@ EOF
 		return 1
 	fi
 
-	${CURL_CMD} ${_curl_args} ${url}
+#	${CURL_CMD} ${_curl_args} ${url}
 
+	# Linux
 	local IFS=${CR}
+	# BSD
+	local IFS=${NL}${CR}
+
 	lineno=0
 	in_header=1
 	http_result=""
 
-#	echo "RESP: [$resp]" >> /tmp/respo.log
+	echo "RESP: [$resp]" >> /tmp/respo.log
 
 	for str in ${resp}; do
 		echo "STR ${lineno}: [${str}]" >> /tmp/str
