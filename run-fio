@@ -180,6 +180,14 @@ if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 fi
 ${MKDIR_CMD} "${FIO_DIRECTORY}"
 
+CBSD_PERF_DISTRO=
+[ -r /etc/rc.conf ] && . /etc/rc.conf
+if [ "${CBSD_PERF_DISTRO}" = "1" ]; then
+	cp -a /tmp/profile.fio /tmp/profile.bak
+	grep -v directory /tmp/profile.bak > /tmp/profile.fio
+	echo "filename=/dev/vtbd0" >> /tmp/profile.fio
+fi
+
 echo "${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio"
 ${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio
 _ret=$?
