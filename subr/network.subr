@@ -122,7 +122,7 @@ EOF
 	# Linux
 	local IFS=${CR}
 	# BSD
-	local IFS=${NL}${CR}
+	#local IFS=${NL}${CR}
 
 	lineno=0
 	in_header=1
