@@ -126,8 +126,17 @@ echo "${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-
 ${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio
 _ret=$?
 
-#if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
-#	[ -d "${FIO_DIRECTORY}" ] && ${RM_CMD} -rf "${FIO_DIRECTORY}"
-#fi
+
+# Clean
+if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
+	if [ -d "${FIO_DIRECTORY}" ]; then
+		if [ -r "${FIO_DIRECTORY}/job.0.0" ]; then
+			echo "Clean dir: ${FIO_DIRECTORY}"
+			${RM_CMD} -rf "${FIO_DIRECTORY}"
+		else
+			echo "no such dir for clean?: ${FIO_DIRECTORY}"
+		fi
+	fi
+fi
 
 exit ${_ret}
