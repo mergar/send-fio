@@ -3,6 +3,12 @@
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
 
+if [ -n "${DESTORY_DISK_DATA}" ]; then
+	DESTORY_DISK_DATA="${DESTORY_DISK_DATA}"
+else
+	DESTORY_DISK_DATA=0
+fi
+
 # options
 #
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
@@ -12,10 +18,10 @@ DO_LOG_NET_TRAFFIC=1
 
 set -e
 . ${progdir}/config
+. ${progdir}/subr/color.subr
 . ${progdir}/subr/system.subr
 . ${progdir}/subr/network.subr
 set +e
-
 
 # main loop. can be overriden via subr/${OPSYS}.subr
 fio_loop()
@@ -25,19 +31,126 @@ fio_loop()
 	return ${_ret}
 }
 
+check_head_disk()
+{
+	local _res
+
+	[ -z "${1}" ] && return 2
+
+	${DD_CMD} if=${1} of=${tmpdir}/is_empty.$$ bs=256k count=1 > /dev/null 2>&1
+	_res=$( ${STRINGS_CMD} ${tmpdir}/is_empty.$$ | ${WC_CMD} -w | ${AWK_CMD} {'printf $1'} )
+	${RM_CMD} -f ${tmpdir}/is_empty.$$
+	if [ "${_res}" = "0" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
 
 ## MAIN
-echo "OS: ${OS}"
-echo "OPSYS: ${OPSYS}"
+init_color
 
+${ECHO} "${N1_COLOR}OS: ${N2_COLOR}${OS}${N0_COLOR}"
+${ECHO} "${N1_COLOR}OPSYS: ${N2_COLOR}${OPSYS}${N0_COLOR}"
+
+select_disks()
+{
+	local clean_disk_num=1
+	local clean_disk=
+	local _kern_disks=$( /sbin/sysctl -qn kern.disks )
+	local DISK_LIST=
+
+	DISK_LIST=$( for i in ${_kern_disks}; do
+		echo "${i}"
+	done | ${SORT_CMD} -u )
+
+
+	for i in ${DISK_LIST}; do
+		if [ "${DESTORY_DISK_DATA}" != "1" ]; then
+			check_head_disk /dev/${i}
+			_ret=$?
+		else
+			_ret=0
+		fi
+
+		case "${_ret}" in
+			0)
+				status="${clean_disk_num} - ${N2_COLOR}${i} ${H2_COLOR}[clean]${N0_COLOR}"
+				export clean_disk_name${clean_disk_num}="/dev/${i}"
+
+				if [ -z "${clean_disk}" ]; then
+					clean_disk="/dev/${i}"
+				else
+					clean_disk="${clean_disk} /dev/${i}"
+				fi
+				clean_disk_num=$(( clean_disk_num + 1 ))
+				;;
+			1)
+				status="  - ${H2_COLOR}${i} [dirty]${N0_COLOR}"
+				;;
+		esac
+		${ECHO} "${status}"
+	done
+
+	if [ -z "${clean_disk}" ]; then
+		${ECHO} "No clean disk found, please add/use empty disk!"
+		[ -n "${DISK_LIST}" ] && ${ECHO} "Or re-run '${pgm}' scrript with DESTORY_DISK_DATA=1 env, e.g.: ${N2_COLOR}env DESTORY_DISK_DATA=1 ${pgm}${N0_COLOR} (Destroy the disk data for I/O perf test)"
+		exit 0
+	fi
+
+	SELECTED_DISK=
+
+	if [ ${clean_disk_num} -eq 1 ]; then
+		#eval _val="\$clean_disk_name$i"
+		eval _val="\$clean_disk_name0"
+		SELECTED_DISK="${_val}"
+		return 0
+	fi
+
+	clean_disk_num=$(( clean_disk_num - 1 ))
+
+
+	echo "Choose: 1-${clean_disk_num}, 0 to cancel"
+	choose=$( while [ true ]; do
+		read p;
+		case ${p} in
+			[0-${clean_disk_num}])
+				echo "${p}"
+				exit 0
+				;;
+			*)
+				continue
+				;;
+		esac
+	done )
+
+	if [ "${choose}" = "0" ]; then
+		exit 0
+	fi
+	eval _val="\$clean_disk_name${choose}"
+	SELECTED_DISK="${_val}"
+}
+
+${ECHO} "${N1_COLOR}Disks found:${N0_COLOR}"
+select_disks
+
+echo "SEL ${SELECTED_DISK}"
+
+
+exit 0
 # network setup
 setup_proxies
 
-echo "Checkin server: ${checkin_server}"
+${ECHO} "${N1_COLOR}Checkin server: ${N2_COLOR}${checkin_server}${N0_COLOR}"
 url="${checkin_server}"
 
-_ret=0
 test_connection
+_ret=$?
+
+if [ ${_ret} -ne 0 ]; then
+	${ECHO} "${N1_COLOR}Connection failed, please try lates: ${N2_COLOR}${checkin_server}${N0_COLOR}"
+	exit 0
+fi
 
 log "INIT" "Connected to ${checkin_server_description}"
 

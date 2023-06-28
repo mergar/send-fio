@@ -4,9 +4,13 @@ progdir="${0%/*}"	# Program directory
 
 set -e
 . ${progdir}/config
+. ${progdir}/subr/color.subr
 . ${progdir}/subr/system.subr
 . ${progdir}/subr/network.subr
 set +e
+
+## MAIN
+init_color
 
 ## FIO_ MACROS/PARAMS
 FIO_PARAMS="

@@ -16,13 +16,24 @@ fi
 
 OS=$( ${UNAME_CMD} -s )
 
+case "${OS}" in
+	Linux)
+		ECHO="echo"
+		;;
+	FreeBSD)
+		ECHO="echo -e"
+		;;
+esac
+
 # generic mandatory tools/script
 MAIN_CMD="
 awk
 cat
 chmod
+chown
 curl
 cut
+dd
 fio
 grep
 head
@@ -33,6 +44,8 @@ mv
 openssl
 rm
 sed
+sort
+strings
 sysctl
 tail
 tee

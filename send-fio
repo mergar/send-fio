@@ -5,6 +5,7 @@ progdir="${0%/*}"	# Program directory
 
 set -e
 . ${progdir}/config
+. ${progdir}/subr/color.subr
 . ${progdir}/subr/system.subr
 . ${progdir}/subr/network.subr
 set +e
@@ -16,23 +17,48 @@ set +e
 ## MAIN: processing begins here
 ##
 # network setup
-setup_proxies
+init_color
 
-echo "Checkin server: ${checkin_server}"
-url="${checkin_server}"
+#setup_proxies
+#${ECHO} "${N1_COLOR}Checkin server: ${N2_COLOR}${checkin_server}${N0_COLOR}"
+#url="${checkin_server}"
 
-_ret=0
-test_connection
-
-log "INIT" "Connected to ${checkin_server_description}"
+#test_connection
+#_ret=$?
+#if [ ${_ret} -ne 0 ]; then
+#	echo "failed: test_connection"
+#	exit ${_ret}
+#fi
+#log "INIT" "Connected to ${checkin_server_description}"
 
 # prepare
 get_id_token
 _ret=$?
+if [ ${_ret} -ne 0 ]; then
+	echo "failed: get_id_token"
+	exit ${_ret}
+fi
 
 # begin
 enable_token
+_ret=$?
+if [ ${_ret} -ne 0 ]; then
+	echo "failed: enable_token"
+	exit ${_ret}
+fi
+
 report_system
+_ret=$?
+if [ ${_ret} -ne 0 ]; then
+	echo "failed: report_system"
+	exit ${_ret}
+fi
+
 disable_token
+_ret=$?
+if [ ${_ret} -ne 0 ]; then
+	echo "failed: disable_token"
+	exit ${_ret}
+fi
 
 exit ${_ret}
