@@ -48,13 +48,11 @@ esac
 MAIN_CMD="
 awk
 cat
-camcontrol
 chmod
 chown
 curl
 cut
 dd
-diskinfo
 fio
 grep
 head
@@ -75,6 +73,19 @@ truncate
 wc
 whoami
 "
+
+case "${OS}" in
+	Linux)
+		MAIN_CMD="${MAIN_CMD} lsblk"
+		# Linux require -i'', not -i ' '
+		sed_delimer=
+		;;
+	FreeBSD)
+		MAIN_CMD="${MAIN_CMD} camcontrol diskinfo"
+		sed_delimer=" "
+		;;
+esac
+
 
 if [ "${USE_TOR}" = "YES" ]; then
 	MAIN_CMD="${MAIN_CMD} nc"
@@ -112,15 +123,6 @@ if [ -r /etc/os-release ]; then
 	fi
 fi
 
-case "${OS}" in
-	Linux)
-		# Linux require -i'', not -i ' '
-		sed_delimer=
-		;;
-	FreeBSD)
-		sed_delimer=" "
-		;;
-esac
 
 ###
 fi

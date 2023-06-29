@@ -11,4 +11,5 @@ fio/tests
 .shrc
 .ssh
 .bash_history
+.selected_editor
 select_jail
