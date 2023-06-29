@@ -402,6 +402,7 @@ report_system()
 {
 	local REL=$( uri_escape $( ${UNAME_CMD} -r ) )
 	local ARCH=$( ${UNAME_CMD} -m )
+	local is_virtual= _jailed=
 
 	case "${OS}" in
 		FreeBSD)
@@ -409,14 +410,48 @@ report_system()
 			local VEN=$(echo $line | ${CUT_CMD} -d ' ' -f 1)
 			local DEV=$(uri_escape $(echo $line | ${CUT_CMD} -d ' ' -f 2-))
 			local count=$(${SYSCTL_CMD} -n hw.ncpu)
+			local smbios="$(kenv smbios.system.product)"
+			case "${smbios}" in
+				VirtualBox)
+					is_virtual="VIRTUALBOX"
+					;;
+				VMware*)
+					is_virtual="VMWARE"
+					;;
+				BHYVE)
+					is_virtual="BHYVE"
+					;;
+				*)
+					is_virtual="NONE(${smbios})"
+					;;
+			esac
+			_jailed=$( ${SYSCTL_CMD} -n security.jail.jailed )
+			[ "${_jailed}" = "1" ] && is_virtual="jail"
 			;;
 		Linux)
+			is_virtual=$( systemd-detect-virt | ${TR_CMD} '[:lower:]' '[:upper:]' )
 			local line=$( ${GREP_CMD} "^model name" /proc/cpuinfo | ${HEAD_CMD} -n1 | ${CUT_CMD} -d ':' -f 2 )
 			local VEN=$(echo ${line} | ${AWK_CMD} '{printf $1}' )
 			local count=$( grep ^processor /proc/cpuinfo | ${WC_CMD} -l | ${AWK_CMD} '{printf $1}' )
 			DEV=$( uri_escape $(echo "${line}" | ${CUT_CMD} -d ' ' -f 2- ))
 			;;
 	esac
+
+	if [ -r /etc/os-release ]; then
+		NAME=
+		PRETTY_NAME=
+		. /etc/os-release
+		if [ -n "${PRETTY_NAME}" ]; then
+			OPSYS="${PRETTY_NAME}"
+		elif [ -n "${NAME}" ]; then
+			OPSYS="${NAME}"
+		else
+			OPSYS="${OS}"
+		fi
+	fi
+
+	OPSYS=$( uri_escape $( echo "${OPSYS}" ) )
+	is_virtual=$( uri_escape $( echo "${is_virtual}" ) )
 
 	# FIO
 	TYPE="fio"
@@ -425,6 +460,14 @@ report_system()
 	READ_BW_BYTES=$( ${CAT_CMD} ${progdir}/fio/tests/4k/randread-1-2.json | ${JQ_CMD} '.jobs[0].read.bw_bytes' | ${TR_CMD} -d '"' )
 	WRITE_BW_BYTES=$( ${CAT_CMD} ${progdir}/fio/tests/4k/randread-1-2.json | ${JQ_CMD} '.jobs[0].write.bw_bytes' | ${TR_CMD} -d '"' )
 	RUNTIME=$( ${CAT_CMD} ${progdir}/fio/tests/4k/randread-1-2.json | ${JQ_CMD} '.jobs[0]."job options".runtime' | ${TR_CMD} -d '"' )
+
+	if [ -r ${progdir}/fio/tests/extra_info.txt ]; then
+		EXTRA_INFO=$( ${HEAD_CMD} -n1 ${progdir}/fio/tests/extra_info.txt )
+	else
+		EXTRA_INFO="NONE"
+	fi
+
+	EXTRA_INFO=$( uri_escape $( echo "${EXTRA_INFO}" ) )
 
 	#echo $READ_BW_BYTES
 	#echo $WRITE_BW_BYTES
@@ -436,7 +479,8 @@ report_system()
 	#echo "MB per sec: $MB"
 
 	echo_begin "${N1_COLOR}Posting perf statistics to: ${N2_COLOR}${checkin_server_description}${N0_COLOR}"
-	do_http_request_check_status "GET" "/scripts/report_system.php?token=${TOKEN}&key=${KEY}&rel=${REL}&arch=${ARCH}&opsys=${OS}&cpus=${count}&vendor=${VEN}&cpu_type=${DEV}&bench_type=${TYPE}&bench_profile=${PROFILE}&fio_bw_mb=${MB}&fio_bw_kb=${KB}" "" "" "OS statistics submission"
+	#do_http_request_check_status "GET" "/scripts/report_system.php?token=${TOKEN}&key=${KEY}&rel=${REL}&arch=${ARCH}&opsys=${OS}&cpus=${count}&vendor=${VEN}&cpu_type=${DEV}&bench_type=${TYPE}&bench_profile=${PROFILE}&fio_bw_mb=${MB}&fio_bw_kb=${KB}" "" "" "OS statistics submission"
+	do_http_request_check_status "GET" "/scripts/report_system.php?token=${TOKEN}&key=${KEY}&rel=${REL}&arch=${ARCH}&opsys=${OPSYS}&cpus=${count}&vendor=${VEN}&cpu_type=${DEV}&is_virtual=${is_virtual}&extra_info=${EXTRA_INFO}&bench_type=${TYPE}&bench_profile=${PROFILE}&fio_bw_mb=${MB}&fio_bw_kb=${KB}" "" "" "OS statistics submission"
 	echo_end_success
 	log "INFO" "Posted OS statistics to ${checkin_server_description}"
 }

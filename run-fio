@@ -195,10 +195,12 @@ if [ "${CBSD_PERF_DISTRO}" = "1" ]; then
 	echo "filename=${FIO_SELECTED_DISK}" >> /tmp/profile.fio
 fi
 
+# VEIL
+#IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
+#echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > ${progdir}/fio/tests/extra_info.txt
 echo "${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio"
 ${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio
 _ret=$?
-
 
 # Clean
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
