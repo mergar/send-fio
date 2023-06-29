@@ -123,7 +123,7 @@ if [ ${ret} -eq 0 ]; then
 fi
 
 [ -r /tmp/${PROFILE}.config ] && . /tmp/defaults.config
-
+[ -r /tmp/profile.conf.tpl ] && ${RM_CMD} -f /tmp/profile.conf.tpl
 ${CURL_CMD} -s -o /tmp/profile.conf.tpl ${BENCH_TPL} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
 ret=$?
 if [ ${ret} -ne 0 ]; then
@@ -131,7 +131,14 @@ if [ ${ret} -ne 0 ]; then
 	${CAT_CMD} /tmp/curl.$$
 	exit 1
 fi
+
 ${RM_CMD} /tmp/curl.$$
+${GREP_CMD} -q "^rw=" /tmp/profile.conf.tpl
+ret=$?
+if [ ${ret} -ne 0 ]; then
+	echo "broken/wrong profile: ${BENCH_TPL}, no rw= ?"
+	exit 1
+fi
 
 TYPE_UPPER=$( echo "${TYPE}" | ${TR_CMD} '[:lower:]' '[:upper:]' )
 
@@ -170,6 +177,8 @@ ${MKDIR_CMD} -p ${progdir}/fio/tests/4k
 #IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
 #echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > ${progdir}/fio/tests/extra_info.txt
 
+echo "${PROFILE}" > ${progdir}/fio/tests/profile.txt
+
 echo "CHECK for: ${FIO_DIRECTORY}/job.0.0"
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 	if [ -d "${FIO_DIRECTORY}" ]; then
@@ -198,8 +207,8 @@ fi
 # VEIL
 #IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
 #echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > ${progdir}/fio/tests/extra_info.txt
-echo "${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio"
-${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio
+echo "${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/${PROFILE}-1-2.json /tmp/profile.fio"
+${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/${PROFILE}-1-2.json /tmp/profile.fio
 _ret=$?
 
 # Clean

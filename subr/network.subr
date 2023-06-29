@@ -455,11 +455,11 @@ report_system()
 
 	# FIO
 	TYPE="fio"
-	PROFILE="randread.fio"
+	PROFILE=$( ${HEAD_CMD} ${progdir}/fio/tests/profile.txt )
 
-	READ_BW_BYTES=$( ${CAT_CMD} ${progdir}/fio/tests/4k/randread-1-2.json | ${JQ_CMD} '.jobs[0].read.bw_bytes' | ${TR_CMD} -d '"' )
-	WRITE_BW_BYTES=$( ${CAT_CMD} ${progdir}/fio/tests/4k/randread-1-2.json | ${JQ_CMD} '.jobs[0].write.bw_bytes' | ${TR_CMD} -d '"' )
-	RUNTIME=$( ${CAT_CMD} ${progdir}/fio/tests/4k/randread-1-2.json | ${JQ_CMD} '.jobs[0]."job options".runtime' | ${TR_CMD} -d '"' )
+	READ_BW_BYTES=$( ${CAT_CMD} ${progdir}/fio/tests/4k/${PROFILE}-1-2.json | ${JQ_CMD} '.jobs[0].read.bw_bytes' | ${TR_CMD} -d '"' )
+	WRITE_BW_BYTES=$( ${CAT_CMD} ${progdir}/fio/tests/4k/${PROFILE}-1-2.json | ${JQ_CMD} '.jobs[0].write.bw_bytes' | ${TR_CMD} -d '"' )
+	RUNTIME=$( ${CAT_CMD} ${progdir}/fio/tests/4k/${PROFILE}-1-2.json | ${JQ_CMD} '.jobs[0]."job options".runtime' | ${TR_CMD} -d '"' )
 
 	if [ -r ${progdir}/fio/tests/extra_info.txt ]; then
 		EXTRA_INFO=$( ${HEAD_CMD} -n1 ${progdir}/fio/tests/extra_info.txt )
@@ -472,15 +472,19 @@ report_system()
 	#echo $READ_BW_BYTES
 	#echo $WRITE_BW_BYTES
 	#echo $RUNTIME
-	KB=$(( READ_BW_BYTES / 1024 ))
-	MB=$(( READ_BW_BYTES / 1024 / 1024 ))
+
+	R_KB=$(( READ_BW_BYTES / 1024 ))
+	R_MB=$(( READ_BW_BYTES / 1024 / 1024 ))
+
+	W_KB=$(( WRITE_BW_BYTES / 1024 ))
+	W_MB=$(( WRITE_BW_BYTES / 1024 / 1024 ))
 
 	#echo "MB per sec: $MB"
 	#echo "MB per sec: $MB"
 
 	echo_begin "${N1_COLOR}Posting perf statistics to: ${N2_COLOR}${checkin_server_description}${N0_COLOR}"
-	#do_http_request_check_status "GET" "/scripts/report_system.php?token=${TOKEN}&key=${KEY}&rel=${REL}&arch=${ARCH}&opsys=${OS}&cpus=${count}&vendor=${VEN}&cpu_type=${DEV}&bench_type=${TYPE}&bench_profile=${PROFILE}&fio_bw_mb=${MB}&fio_bw_kb=${KB}" "" "" "OS statistics submission"
-	do_http_request_check_status "GET" "/scripts/report_system.php?token=${TOKEN}&key=${KEY}&rel=${REL}&arch=${ARCH}&opsys=${OPSYS}&cpus=${count}&vendor=${VEN}&cpu_type=${DEV}&is_virtual=${is_virtual}&extra_info=${EXTRA_INFO}&bench_type=${TYPE}&bench_profile=${PROFILE}&fio_bw_mb=${MB}&fio_bw_kb=${KB}" "" "" "OS statistics submission"
+	#echo "&bench_type=${TYPE}&bench_profile=${PROFILE}&fio_rbw_mb=${R_MB}&fio_rbw_kb=${RKB}&fio_wbw_mb=${W_MB}&fio_wbw_kb=${W_KB}"
+	do_http_request_check_status "GET" "/scripts/report_system.php?token=${TOKEN}&key=${KEY}&rel=${REL}&arch=${ARCH}&opsys=${OPSYS}&cpus=${count}&vendor=${VEN}&cpu_type=${DEV}&is_virtual=${is_virtual}&extra_info=${EXTRA_INFO}&bench_type=${TYPE}&bench_profile=${PROFILE}&fio_rbw_mb=${R_MB}&fio_rbw_kb=${RKB}&fio_wbw_mb=${W_MB}&fio_wbw_kb=${W_KB}" "" "" "OS statistics submission"
 	echo_end_success
 	log "INFO" "Posted OS statistics to ${checkin_server_description}"
 }
