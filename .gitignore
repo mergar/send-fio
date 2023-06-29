@@ -9,6 +9,6 @@ fio/tests
 .login
 .profile
 .shrc
+.ssh
+.bash_history
 select_jail
-
-
