@@ -54,7 +54,7 @@ do_http_request()
 	local lineno
 	local in_header
 	local result_count
-
+	local NL=$'\n'
 	local _curl_args=
 
 	if [ -n "${HTTP_PROXY}" ]; then
