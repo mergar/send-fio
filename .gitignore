@@ -12,4 +12,5 @@ fio/tests
 .ssh
 .bash_history
 .selected_editor
+.lesshst
 select_jail
