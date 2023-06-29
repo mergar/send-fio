@@ -13,7 +13,6 @@ USE_TOR=NO
 DO_LOG_NET_TRAFFIC=1
 
 send_stats_log="/var/log/send-perf-stats-log"
-id_token_file='/var/db/send-perf-stats'
 checkin_server_description=${checkin_server}
 nc_host=${checkin_server}
 nc_port=80

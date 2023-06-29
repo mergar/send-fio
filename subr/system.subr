@@ -76,11 +76,13 @@ whoami
 
 case "${OS}" in
 	Linux)
+		id_token_file='/var/run/send-perf-stats'
 		MAIN_CMD="${MAIN_CMD} lsblk"
 		# Linux require -i'', not -i ' '
 		sed_delimer=
 		;;
 	FreeBSD)
+		id_token_file='/var/db/send-perf-stats'
 		MAIN_CMD="${MAIN_CMD} camcontrol diskinfo"
 		sed_delimer=" "
 		;;

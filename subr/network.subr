@@ -225,8 +225,6 @@ uri_escape()
 	'
 }
 
-parse_http_proxy_string()
-{
 # Handle HTTP proxy services
 #
 # HTTP_PROXY/http_proxy can take the following form:
@@ -239,54 +237,55 @@ parse_http_proxy_string()
 # OUT:  * http_header_proxy_auth
 # OUT:  * nc_host
 # OUT:  * nc_port
+parse_http_proxy_string()
+{
+	local PROXY_AUTH_USER
+	local PROXY_AUTH_PASS
+	local PROXY_HOST
+	local PROXY_PORT
 
-  local PROXY_AUTH_USER
-  local PROXY_AUTH_PASS
-  local PROXY_HOST
-  local PROXY_PORT
+	if [ -z "$HTTP_PROXY" -a -n "$http_proxy" ]; then
+		HTTP_PROXY=$http_proxy
+	fi
+	if [ -n "$HTTP_PROXY" ]; then
+		# Attempt to resolve any HTTP authentication
+		if [ -n "$HTTP_PROXY_AUTH" ]; then
+			PROXY_AUTH_USER=$(echo $HTTP_PROXY_AUTH | ${SED_CMD} -E 's/^.+:\*:(.+):.+$/\1/g')
+			PROXY_AUTH_PASS=$(echo $HTTP_PROXY_AUTH | ${SED_CMD} -E 's/^.+:\*:.+:(.+)$/\1/g')
+		else
+			# Check for authentication within HTTP_PROXY
+			HAS_HTTP_AUTH=$(echo $HTTP_PROXY | ${SED_CMD} -E 's/^(http:\/\/)?((.+:.+)@)?.+/\3/')
+			if [ -n "$HAS_HTTP_AUTH" ]; then
+				# Found HTTP authentication details
+				PROXY_AUTH_USER=$(echo $HAS_HTTP_AUTH | ${CUT_CMD} -d: -f1)
+				PROXY_AUTH_PASS=$(echo $HAS_HTTP_AUTH | ${CUT_CMD} -d: -f2)
+			fi
+		fi
 
-  if [ -z "$HTTP_PROXY" -a -n "$http_proxy" ]; then
-    HTTP_PROXY=$http_proxy
-  fi
-  if [ -n "$HTTP_PROXY" ]; then
-    # Attempt to resolve any HTTP authentication
-    if [ -n "$HTTP_PROXY_AUTH" ]; then
-      PROXY_AUTH_USER=$(echo $HTTP_PROXY_AUTH | ${SED_CMD} -E 's/^.+:\*:(.+):.+$/\1/g')
-      PROXY_AUTH_PASS=$(echo $HTTP_PROXY_AUTH | ${SED_CMD} -E 's/^.+:\*:.+:(.+)$/\1/g')
-    else
-      # Check for authentication within HTTP_PROXY
-      HAS_HTTP_AUTH=$(echo $HTTP_PROXY | ${SED_CMD} -E 's/^(http:\/\/)?((.+:.+)@)?.+/\3/')
-      if [ -n "$HAS_HTTP_AUTH" ]; then
-        # Found HTTP authentication details
-        PROXY_AUTH_USER=$(echo $HAS_HTTP_AUTH | ${CUT_CMD} -d: -f1)
-        PROXY_AUTH_PASS=$(echo $HAS_HTTP_AUTH | ${CUT_CMD} -d: -f2)
-      fi
-    fi
+		# Determine the proxy components
+		PROXY_HOST=$(echo $HTTP_PROXY | ${SED_CMD} -E 's/^(http:\/\/)?(.+:.+@)?([^@:]+)(:.+)?/\3/')
+		PROXY_PORT=$(echo $HTTP_PROXY | ${SED_CMD} -E 's/^(http:\/\/)?(.+:.+@)?(.+):([0-9]+)/\4/' | ${SED_CMD} -e 's/[^0-9]//g')
+		if [ -z "$PROXY_PORT" ]; then
+			# Use default proxy port
+			PROXY_PORT=3128
+		fi
+	fi
 
-    # Determine the proxy components
-    PROXY_HOST=$(echo $HTTP_PROXY | ${SED_CMD} -E 's/^(http:\/\/)?(.+:.+@)?([^@:]+)(:.+)?/\3/')
-    PROXY_PORT=$(echo $HTTP_PROXY | ${SED_CMD} -E 's/^(http:\/\/)?(.+:.+@)?(.+):([0-9]+)/\4/' | ${SED_CMD} -e 's/[^0-9]//g')
-    if [ -z "$PROXY_PORT" ]; then
-      # Use default proxy port
-      PROXY_PORT=3128
-    fi
-  fi
-
-  # Determine the host/port netcat should connect to
-  if [ -n "$PROXY_HOST" -a -n "$PROXY_PORT" ]; then
-    nc_host=$PROXY_HOST
-    nc_port=$PROXY_PORT
-    # Proxy authentication, if required
-    if [ -n "$PROXY_AUTH_USER" -a -n "$PROXY_AUTH_PASS" ]; then
-      local auth_base64=$(echo -n "$PROXY_AUTH_USER:$PROXY_AUTH_PASS" | ${OPENSSL_CMD} base64)
-      http_header_proxy_auth="Basic $auth_base64"
-    fi
-    return 0
-  else
-    nc_host=$checkin_server
-    nc_port=80
-    return 1
-  fi
+	# Determine the host/port netcat should connect to
+	if [ -n "$PROXY_HOST" -a -n "$PROXY_PORT" ]; then
+		nc_host=$PROXY_HOST
+		nc_port=$PROXY_PORT
+		# Proxy authentication, if required
+		if [ -n "$PROXY_AUTH_USER" -a -n "$PROXY_AUTH_PASS" ]; then
+			local auth_base64=$(echo -n "$PROXY_AUTH_USER:$PROXY_AUTH_PASS" | ${OPENSSL_CMD} base64)
+			http_header_proxy_auth="Basic $auth_base64"
+		fi
+		return 0
+	else
+		nc_host=$checkin_server
+		nc_port=80
+		return 1
+	fi
 }
 
 test_connection()
