@@ -6,6 +6,7 @@ checkin_server="https://perf.beeru.online"
 url="${checkin_server}"
 
 BENCH_CONF_URL="${checkin_server}/test.conf"
+BENCH_INDEX_URL="${checkin_server}/fio/index.tests"
 
 CURR_VERSION="0.1"
 USE_TOR=NO

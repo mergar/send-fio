@@ -1,1 +1,14 @@
 fio/tests
+.bashrc
+.cache/
+.config/
+.cshrc
+.history
+.k5login
+.local/
+.login
+.profile
+.shrc
+select_jail
+
+

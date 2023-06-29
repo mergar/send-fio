@@ -8,7 +8,7 @@ set -e
 . ${progdir}/subr/system.subr
 . ${progdir}/subr/network.subr
 set +e
-
+date
 ## MAIN
 init_color
 
@@ -18,15 +18,15 @@ DIRECTORY
 RUNTIME
 BS
 IOENGINE
-SYNC
 DIRECT
 NUMJOBS
 SIZE
 IODEPTH
 "
 
-echo "${CURL_CMD} -o /tmp/test.conf ${BENCH_CONF_URL}"
-${CURL_CMD} -o /tmp/test.conf ${BENCH_CONF_URL} > /tmp/curl.$$ 2>&1
+# SYNC
+echo "${CURL_CMD} -o /tmp/index.conf ${BENCH_INDEX_URL}"
+${CURL_CMD} -s -o /tmp/index.conf ${BENCH_INDEX_URL} > /tmp/curl.$$ 2>&1
 ret=$?
 
 trap "${RM_CMD} -f /tmp/curl.$$" HUP INT ABRT BUS TERM EXIT
@@ -37,16 +37,50 @@ if [ ${ret} -ne 0 ]; then
 	exit 1
 else
 	echo "fetched config:"
-	cat /tmp/test.conf
+	cat /tmp/index.conf
+	echo
 fi
 
-unset TYPE PROFILE
-. /tmp/test.conf
+_tmpdir=$( ${MKTEMP_CMD} -d )
+_tmpfile=$( ${MKTEMP_CMD} )
 
-if [ -z "${TYPE}" ]; then
-	echo "no such benchmark TYPE specified: ${BENCH_CONF_URL}"
-	exit 1
+index=1
+
+_def_method=$( ${CAT_CMD} /tmp/index.conf | ${SORT_CMD} -n | while read a; do
+	p1=${a%%:*}
+	p2=${a##*:}
+	[ -z "${p1}" ] && continue
+	[ ${index} -eq 1 ] && printf "${p1}"
+
+	echo "0:${p1}:" >> ${_tmpdir}/${p1}.item
+	${ECHO} "${H3_COLOR}Description: ${p2}${N0_COLOR}" > ${_tmpdir}/${p1}.descr
+	index=$(( index + 1 ))
+done )
+
+subject="Select test profile (${_def_method}):"
+${ECHO} "${N1_COLOR}${subject}${N0_COLOR}"
+
+#/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method}
+/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
+_ret=$?
+${RM_CMD} -rf ${_tmpdir}
+
+if [ ${_ret} -ne 0 ]; then
+	# break or cancel
+	choose="0"
 fi
+
+PROFILE=$( ${CAT_CMD} ${_tmpfile} )
+${RM_CMD} ${_tmpfile} /tmp/index.conf
+TYPE="fio"
+
+#unset TYPE PROFILE
+#. /tmp/test.conf
+
+#if [ -z "${TYPE}" ]; then
+#	echo "no such benchmark TYPE specified: ${BENCH_CONF_URL}"
+#	exit 1
+#fi
 if [ -z "${PROFILE}" ]; then
 	echo "no such benchmark PROFILE specified: ${BENCH_CONF_URL}"
 	exit 1
@@ -65,9 +99,32 @@ if [ -r /etc/os-release ]; then
 	fi
 fi
 
-BENCH_CONFIG="${checkin_server}/${TYPE}/${PROFILE}"
+BENCH_TPL="${checkin_server}/${TYPE}/${PROFILE}.fio"
+BENCH_CONFIG="${checkin_server}/${TYPE}/${PROFILE}.config"
+BENCH_DEFAULTS_CONFIG="${checkin_server}/${TYPE}/defaults.config"
 
-${CURL_CMD} -o /tmp/profile.conf.tpl ${BENCH_CONFIG} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
+echo "TPL: ${BENCH_TPL}, CFG: ${BENCH_CONFIG}"
+
+${CURL_CMD} -s -o /tmp/defaults.config ${BENCH_DEFAULTS_CONFIG} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
+ret=$?
+if [ ${ret} -ne 0 ]; then
+	echo "curl error: ${ret}"
+	${CAT_CMD} /tmp/curl.$$
+	exit 1
+fi
+${RM_CMD} /tmp/curl.$$
+[ -r /tmp/defaults.config ] && . /tmp/defaults.config
+
+# per-template extra/custom
+${CURL_CMD} -s -o /tmp/${PROFILE}.config ${BENCH_CONFIG} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
+ret=$?
+if [ ${ret} -eq 0 ]; then
+	${RM_CMD} /tmp/curl.$$
+fi
+
+[ -r /tmp/${PROFILE}.config ] && . /tmp/defaults.config
+
+${CURL_CMD} -s -o /tmp/profile.conf.tpl ${BENCH_TPL} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
 ret=$?
 if [ ${ret} -ne 0 ]; then
 	echo "curl error: ${ret}"
@@ -85,14 +142,22 @@ eval MY_PARAMS="\$${TYPE_UPPER}_PARAMS"
 #FIO_DIRECTORY="/storages/zfs/z150_12${FIO_DIRECTORY}"
 #FIO_IOENGINE="libaio"
 
+echo $MY_PARAMS
+
 if [ -n "${MY_PARAMS}" ]; then
 	for i in ${MY_PARAMS}; do
 		eval VAL="\$${TYPE_UPPER}_${i}"
 #		echo "X $VAL"
-		[ -z "${VAL}" ] && continue
+		if [ -z "${VAL}" ]; then
+			${ECHO} "${W1_COLOR}Params empty: ${N2_COLOR}${i}${N0_COLOR}"
+			exit 1
+		fi
 #		sed -i'' "s#%%i%%#${VAL}#g" /tmp/profile.conf.tpl
 		${SED_CMD} -i${sed_delimer}'' -Ees:"%%${i}%%":"${VAL}":g /tmp/profile.conf.tpl
 	done
+else
+	${ECHO} "${W1_COLOR}No PARAMS vars${N0_COLOR}"
+	exit 1
 fi
 
 ${MV_CMD} /tmp/profile.conf.tpl /tmp/profile.fio
@@ -123,7 +188,11 @@ CBSD_PERF_DISTRO=
 if [ "${CBSD_PERF_DISTRO}" = "1" ]; then
 	cp -a /tmp/profile.fio /tmp/profile.bak
 	grep -v directory /tmp/profile.bak > /tmp/profile.fio
-	echo "filename=/dev/vtbd0" >> /tmp/profile.fio
+	if [ -z "${FIO_SELECTED_DISK}" ]; then
+		echo "No such FIO_SELECTED_DISK"
+		exit 1
+	fi
+	echo "filename=${FIO_SELECTED_DISK}" >> /tmp/profile.fio
 fi
 
 echo "${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/randread-1-2.json /tmp/profile.fio"

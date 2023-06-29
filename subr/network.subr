@@ -107,15 +107,20 @@ do_http_request()
 		return 1
 	fi
 
-	${CURL_CMD} ${_curl_args} ${url}
+#	${CURL_CMD} ${_curl_args} ${url}
 
-	local IFS=${CR}
+	resp=$( echo "${resp}" | ${TR_CMD} -d "\r" | ${TR_CMD} "\n" "|" )
+
 	lineno=0
 	in_header=1
 	http_result=""
 	body_result=""
 
+	local OIFS="${IFS}"
+	local IFS="|"
+
 	for str in ${resp}; do
+		IFS="${OIFS}"
 		# check for 'HTTP/1.[XX] 200 OK'
 		if [ ${lineno} -eq 0 ] ; then
 			if expr "${str}" : "^HTTP/1\.[01] 200 OK*" > /dev/null; then
@@ -150,7 +155,9 @@ do_http_request()
 			result_count=$(($result_count+1))
 		fi
 		lineno=$(($lineno+1))
+		IFS="|"
 	done
+	IFS="${OIFS}"
 
 	#echo "${http_result}" >> /tmp/result
 	if [ -n "${body_result}" ]; then
@@ -345,13 +352,15 @@ get_id_token()
 			fail "HTTP query failed during key/token generation: please try later"
 		fi
 
+		echo "B:[$body]" >> /tmp/body.txt
+
 		KEY=$( extract_field "${body}" "KEY" )
 		TOKEN=$( extract_field "${body}" "TOKEN" )
 
 		# validate KEY/TOKEN
 		if [ ${#KEY} -lt 10 -o ${#KEY} -gt 64 -o ${#TOKEN} -lt 10 -o ${#TOKEN} -gt 64 ]; then
 			log "FAIL" "Invalid key/token received for IDTOKEN=${TOKEN}"
-			fail "Invalid key/token combination received from the server"
+			fail "Invalid key/token combination received from the server: wrong len: [${KEY}][${TOKEN}]"
 		fi
 		log "INFO" "Generated idtoken='${IDTOKEN}', received key=${KEY} and token=${TOKEN}"
 

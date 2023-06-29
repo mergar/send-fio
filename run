@@ -3,11 +3,15 @@
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
 
-if [ -n "${DESTORY_DISK_DATA}" ]; then
-	DESTORY_DISK_DATA="${DESTORY_DISK_DATA}"
-else
-	DESTORY_DISK_DATA=0
-fi
+#if [ -n "${DESTORY_DISK_DATA}" ]; then
+#	DESTORY_DISK_DATA="${DESTORY_DISK_DATA}"
+#else
+#	DESTORY_DISK_DATA=0
+#fi
+DESTORY_DISK_DATA=1
+CBSD_PERF_DISTRO=0
+
+[ -r /etc/rc.conf ] && . /etc/rc.conf
 
 # options
 #
@@ -59,11 +63,19 @@ select_disks()
 	local clean_disk=
 	local _kern_disks=$( /sbin/sysctl -qn kern.disks )
 	local DISK_LIST=
+	local _def_method=
+	local _tmpdir=
+	local _tmpfile=
 
 	DISK_LIST=$( for i in ${_kern_disks}; do
+		case "${i}" in
+			acd[0-9]*|cd[0-9]*|scd[0-9]*) continue ;;
+		esac
 		echo "${i}"
 	done | ${SORT_CMD} -u )
 
+	_tmpdir=$( ${MKTEMP_CMD} -d )
+	_tmpfile=$( ${MKTEMP_CMD} )
 
 	for i in ${DISK_LIST}; do
 		if [ "${DESTORY_DISK_DATA}" != "1" ]; then
@@ -77,6 +89,27 @@ select_disks()
 			0)
 				status="${clean_disk_num} - ${N2_COLOR}${i} ${H2_COLOR}[clean]${N0_COLOR}"
 				export clean_disk_name${clean_disk_num}="/dev/${i}"
+				[ ${clean_disk_num} -eq 1 ] && _def_method="${i}"
+
+				# Try and find some identification information with camcontrol or atacontrol
+				NEWLINE=$( ${CAMCONTROL_CMD} identify /dev/${i} 2>/dev/null | ${SED_CMD} -ne 's/^device model *//p' )
+				if [ -z "${NEWLINE}" ]; then
+					_tmp=$( ${CAMCONTROL_CMD} devlist /dev/${i} | ${GREP_CMD} '^<' )
+					NEWLINE=${_tmp#*<}
+					NEWLINE=${_tmp%>*}
+					if [ -n "${NEWLINE}" ]; then
+						NEWLINE=$( echo ${NEWLINE} | ${TR_CMD} -d '<>' )
+					fi
+					[ -z "${NEWLINE}" ] && NEWLINE=" <Can't identify model>"
+				fi
+				BSIZE=$( ${DISKINFO_CMD} /dev/${i} 2>/dev/null | ${AWK_CMD} '{printf $3}' )
+				[ -z "${BSIZE}" ] && BSIZE="0"
+
+				conv2human ${BSIZE}
+				SIZE="${human_val}"
+
+				echo "0:${i}:" >> ${_tmpdir}/${i}.item
+				${ECHO} "${H3_COLOR}${NEWLINE}, Size: ${SIZE}${N0_COLOR}" > ${_tmpdir}/${i}.descr
 
 				if [ -z "${clean_disk}" ]; then
 					clean_disk="/dev/${i}"
@@ -109,35 +142,55 @@ select_disks()
 
 	clean_disk_num=$(( clean_disk_num - 1 ))
 
+	local subject="Select base sources:"
+	${ECHO} "${N1_COLOR}${subject}${N0_COLOR}"
 
-	echo "Choose: 1-${clean_disk_num}, 0 to cancel"
-	choose=$( while [ true ]; do
-		read p;
-		case ${p} in
-			[0-${clean_disk_num}])
-				echo "${p}"
-				exit 0
-				;;
-			*)
-				continue
-				;;
-		esac
-	done )
+	#/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method}
+	/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
+	_ret=$?
+	${RM_CMD} -rf ${_tmpdir}
+
+	if [ ${_ret} -ne 0 ]; then
+		# break or cancel
+		choose="0"
+	fi
+	SELECTED_DISK=$( ${CAT_CMD} ${_tmpfile} )
+	SELECTED_DISK="/dev/${SELECTED_DISK}"
+	${RM_CMD} ${_tmpfile}
+
+#	echo "Choose: 1-${clean_disk_num}, 0 to cancel"
+#	choose=$( while [ true ]; do
+#		read p;
+#		case ${p} in
+#			[0-${clean_disk_num}])
+#				echo "${p}"
+#				exit 0
+#				;;
+#			*)
+#				continue
+#				;;
+#		esac
+#	done )
 
 	if [ "${choose}" = "0" ]; then
 		exit 0
 	fi
-	eval _val="\$clean_disk_name${choose}"
-	SELECTED_DISK="${_val}"
+#	eval _val="\$clean_disk_name${choose}"
+#	SELECTED_DISK="${_val}"
 }
 
-${ECHO} "${N1_COLOR}Disks found:${N0_COLOR}"
-select_disks
+if [ "${CBSD_PERF_DISTRO}" = "1" ]; then
+	${ECHO} "${N1_COLOR}Disks found:${N0_COLOR}"
+	select_disks
+	if [ ! -e "${SELECTED_DISK}" ]; then
+		echo "no such ${SELECTED_DISK}"
+		exit 1
+	fi
+	echo "SELECTED ${SELECTED_DISK}"
+	sysrc -qf /etc/rc.conf FIO_SELECTED_DISK="${SELECTED_DISK}"
+fi
 
-echo "SEL ${SELECTED_DISK}"
 
-
-exit 0
 # network setup
 setup_proxies
 

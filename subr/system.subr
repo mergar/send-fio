@@ -2,6 +2,25 @@ if [ ! "$_SYSTEM_SUBR" ]; then
 _SYSTEM_SUBR=1
 ###
 
+conv2human()
+{
+	local lhal="B"
+	local tmpmem="$1"
+	local lval
+
+	human_val=""
+
+	for hval in "Kb" "Mb" "Gb" "Tb"; do
+		mem=$(( tmpmem / 1024 ))
+		[ "${mem}" = "0" ] && break
+		tmpmem=${mem}
+		lval="${hval}"
+	done
+
+	human_val="${tmpmem} ${lval}"
+}
+
+
 UNAME_CMD=$( which uname )
 if [ ! -x "${UNAME_CMD}" ]; then
 	echo "error: no such command: uname"
@@ -29,11 +48,13 @@ esac
 MAIN_CMD="
 awk
 cat
+camcontrol
 chmod
 chown
 curl
 cut
 dd
+diskinfo
 fio
 grep
 head
@@ -41,6 +62,7 @@ jq
 mkdir
 mount
 mv
+mktemp
 openssl
 rm
 sed
@@ -60,11 +82,12 @@ fi
 
 for i in ${MAIN_CMD}; do
 	mycmd=
-	mycmd=$( which ${i} )
+	mycmd=$( which ${i} || true )		# true for 'set -e' case
 	if [ ! -x "${mycmd}" ]; then
 		echo "${pgm} error: no such executable dependency/requirement: ${i}"
 		exit 1
 	fi
+
 	MY_CMD=$( echo ${i} | ${TR_CMD} '\-[:lower:]' '_[:upper:]' )
 	MY_CMD="${MY_CMD}_CMD"
 	eval "${MY_CMD}=\"${mycmd}\""
