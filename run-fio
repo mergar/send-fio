@@ -22,6 +22,7 @@ DIRECT
 NUMJOBS
 SIZE
 IODEPTH
+RWMIXREAD
 "
 
 # SYNC
@@ -140,6 +141,39 @@ if [ ${ret} -ne 0 ]; then
 	exit 1
 fi
 
+# read from per-profile/custom?
+[ -z "${FIO_RWMIXREAD}" ] && FIO_RWMIXREAD="50"
+
+case "${PROFILE}" in
+	rw|randrw)
+		for i in 1 2 3; do
+			${ECHO} "${N1_COLOR}mixed workload is specified: ${N2_COLOR}${PROFILE}${N1_COLOR}"
+			${ECHO} "${N1_COLOR}Please adjust/confirm RWMIXREAD values (Default: ${N2_COLOR}${FIO_RWMIXREAD}${N1_COLOR})${N0_COLOR}"
+			${ECHO} "${N1_COLOR} (For example, --rwmixread=${N2_COLOR}30${N1_COLOR} would mean that ${N2_COLOR}30%${N1_COLOR} of the I/O will be reads and ${N2_COLOR}70%${N1_COLOR} will be writes${N0_COLOR}"
+			read _RWMIXREAD
+			if [ -z "${_RWMIXREAD}" ]; then
+				${ECHO} "${N1_COLOR}Confirmed: ${N2_COLOR}${FIO_RWMIXREAD}${N0_COLOR}"
+				break
+			fi
+			case "${_RWMIXREAD}" in
+				''|*[!0-9]*)
+					${ECHO} "${N1_COLOR}Wrong valued, please use 0-100 values${N0_COLOR}"
+					continue
+					;;
+				*)
+					if [ ${_RWMIXREAD} -gt 100 ]; then
+						${ECHO} "${N1_COLOR}Wrong valued, please use 0-100 values${N0_COLOR}"
+						continue
+					fi
+					${ECHO} "${N1_COLOR}Adjusted: ${N2_COLOR}${_RWMIXREAD}${N0_COLOR}"
+					FIO_RWMIXREAD="${_RWMIXREAD}"
+					break
+					;;
+			esac
+		done
+		;;
+esac
+
 TYPE_UPPER=$( echo "${TYPE}" | ${TR_CMD} '[:lower:]' '[:upper:]' )
 
 eval MY_PARAMS="\$${TYPE_UPPER}_PARAMS"
@@ -177,7 +211,6 @@ ${MKDIR_CMD} -p ${progdir}/fio/tests/4k
 #IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
 #echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > ${progdir}/fio/tests/extra_info.txt
 
-echo "${PROFILE}" > ${progdir}/fio/tests/profile.txt
 
 echo "CHECK for: ${FIO_DIRECTORY}/job.0.0"
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
@@ -207,9 +240,27 @@ fi
 # VEIL
 #IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
 #echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > ${progdir}/fio/tests/extra_info.txt
-echo "${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/${PROFILE}-1-2.json /tmp/profile.fio"
-${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/4k/${PROFILE}-1-2.json /tmp/profile.fio
+echo "${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json /tmp/profile.fio"
+
+# randread-iodepth-1-numjobs-2
+${FIO_CMD} --output-format=json --output=${progdir}/fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json /tmp/profile.fio
 _ret=$?
+
+#echo "${progdir}/fio/tests/profile.txt
+
+echo "profile=\"${PROFILE}\"" > ${progdir}/fio/tests/fio.conf
+
+${GREP_CMD} "^[a-z]*=" /tmp/profile.fio | while read a; do
+	p1=${a%%=*}
+	p2=${a##*=}
+	case "${p1}" in
+		runtime|bs|ioengine|numjobs|size|iodepth|rwmixread)
+			echo "${a}" >> ${progdir}/fio/tests/fio.conf
+			;;
+		*)
+			;;
+	esac
+done
 
 # Clean
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
