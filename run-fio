@@ -2,13 +2,23 @@
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
 
+alt_path=
+
+while getopts "p:d:" opt; do
+	case "${opt}" in
+		p) alt_path="${OPTARG}" ;;
+		d) debug="${OPTARG}" ;;
+	esac
+	shift $(($OPTIND - 1))
+done
+
 set -e
 . ${progdir}/config
 . ${progdir}/subr/color.subr
 . ${progdir}/subr/system.subr
 . ${progdir}/subr/network.subr
 set +e
-date
+
 ## MAIN
 init_color
 
@@ -58,9 +68,9 @@ _def_method=$( ${CAT_CMD} /tmp/index.conf | ${SORT_CMD} -n | while read a; do
 	index=$(( index + 1 ))
 done )
 
+
 subject="Select test profile (${_def_method}):"
 ${ECHO} "${N1_COLOR}${subject}${N0_COLOR}"
-
 #/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method}
 /root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
 _ret=$?
@@ -184,6 +194,12 @@ eval MY_PARAMS="\$${TYPE_UPPER}_PARAMS"
 #FIO_IOENGINE="libaio"
 
 echo $MY_PARAMS
+
+# overrides
+if [ -n "${alt_path}" ]; then
+	echo "ALTPOOL: ${alt_path}"
+	FIO_DIRECTORY="${alt_path}"
+fi
 
 if [ -n "${MY_PARAMS}" ]; then
 	for i in ${MY_PARAMS}; do

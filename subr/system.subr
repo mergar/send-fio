@@ -47,12 +47,14 @@ esac
 # generic mandatory tools/script
 MAIN_CMD="
 awk
+basename
 cat
 chmod
 chown
 curl
 cut
 dd
+find
 fio
 grep
 head

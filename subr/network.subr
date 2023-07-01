@@ -468,7 +468,6 @@ vendor="${VEN}"
 cpu_type="${DEV}"
 is_virtual="${is_virtual}"
 bench_type="${TYPE}"
-bench_profile="${PROFILE}"
 EOF
 
 	cd ${progdir}/fio
