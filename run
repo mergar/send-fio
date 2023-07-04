@@ -3,12 +3,11 @@
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
 
-#if [ -n "${DESTORY_DISK_DATA}" ]; then
-#	DESTORY_DISK_DATA="${DESTORY_DISK_DATA}"
-#else
-#	DESTORY_DISK_DATA=0
-#fi
-DESTORY_DISK_DATA=1
+if [ -n "${DESTORY_DISK_DATA}" ]; then
+	DESTORY_DISK_DATA="${DESTORY_DISK_DATA}"
+else
+	DESTORY_DISK_DATA=0
+fi
 CBSD_PERF_DISTRO=0
 
 [ -r /etc/rc.conf ] && . /etc/rc.conf
