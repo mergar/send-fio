@@ -3,9 +3,11 @@ pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
 
 alt_path=
+env_file=
 
-while getopts "p:d:" opt; do
+while getopts "e:p:d:" opt; do
 	case "${opt}" in
+		e) env_file="${OPTARG}" ;;
 		p) alt_path="${OPTARG}" ;;
 		d) debug="${OPTARG}" ;;
 	esac
@@ -35,54 +37,63 @@ IODEPTH
 RWMIXREAD
 "
 
-# SYNC
-echo "${CURL_CMD} -o /tmp/index.conf ${BENCH_INDEX_URL}"
-${CURL_CMD} -s -o /tmp/index.conf ${BENCH_INDEX_URL} > /tmp/curl.$$ 2>&1
-ret=$?
+# AUTO_XXX vars ?
+[ -n "${env_file}" -a -r "${env_file}" ] && . ${env_file}
 
-trap "${RM_CMD} -f /tmp/curl.$$" HUP INT ABRT BUS TERM EXIT
+if [ -z "${AUTO_PROFILE}" ]; then
+	# SYNC
+	echo "${CURL_CMD} -o /tmp/index.conf ${BENCH_INDEX_URL}"
+	${CURL_CMD} -s -o /tmp/index.conf ${BENCH_INDEX_URL} > /tmp/curl.$$ 2>&1
+	ret=$?
 
-if [ ${ret} -ne 0 ]; then
-	echo "curl error: ${ret}"
-	${CAT_CMD} /tmp/curl.$$
-	exit 1
+	trap "${RM_CMD} -f /tmp/curl.$$" HUP INT ABRT BUS TERM EXIT
+
+	if [ ${ret} -ne 0 ]; then
+		echo "curl error: ${ret}"
+		${CAT_CMD} /tmp/curl.$$
+		exit 1
+	else
+		echo "fetched config:"
+		cat /tmp/index.conf
+		echo
+	fi
+
+	_tmpdir=$( ${MKTEMP_CMD} -d )
+	_tmpfile=$( ${MKTEMP_CMD} )
+
+	index=1
+
+	_def_method=$( ${CAT_CMD} /tmp/index.conf | ${SORT_CMD} -n | while read a; do
+		p1=${a%%:*}
+		p2=${a##*:}
+		[ -z "${p1}" ] && continue
+		[ ${index} -eq 1 ] && printf "${p1}"
+
+		echo "0:${p1}:" >> ${_tmpdir}/${p1}.item
+		${ECHO} "${H3_COLOR}Description: ${p2}${N0_COLOR}" > ${_tmpdir}/${p1}.descr
+		index=$(( index + 1 ))
+	done )
+
+
+	subject="Select test profile (${_def_method}):"
+	${ECHO} "${N1_COLOR}${subject}${N0_COLOR}"
+	#/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method}
+	/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
+	_ret=$?
+	${RM_CMD} -rf ${_tmpdir}
+
+	if [ ${_ret} -ne 0 ]; then
+		# break or cancel
+		choose="0"
+	fi
+
+
+	PROFILE=$( ${CAT_CMD} ${_tmpfile} )
+	${RM_CMD} ${_tmpfile} /tmp/index.conf
 else
-	echo "fetched config:"
-	cat /tmp/index.conf
-	echo
+	# autotests
+	PROFILE="${AUTO_PROFILE}"
 fi
-
-_tmpdir=$( ${MKTEMP_CMD} -d )
-_tmpfile=$( ${MKTEMP_CMD} )
-
-index=1
-
-_def_method=$( ${CAT_CMD} /tmp/index.conf | ${SORT_CMD} -n | while read a; do
-	p1=${a%%:*}
-	p2=${a##*:}
-	[ -z "${p1}" ] && continue
-	[ ${index} -eq 1 ] && printf "${p1}"
-
-	echo "0:${p1}:" >> ${_tmpdir}/${p1}.item
-	${ECHO} "${H3_COLOR}Description: ${p2}${N0_COLOR}" > ${_tmpdir}/${p1}.descr
-	index=$(( index + 1 ))
-done )
-
-
-subject="Select test profile (${_def_method}):"
-${ECHO} "${N1_COLOR}${subject}${N0_COLOR}"
-#/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method}
-/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
-_ret=$?
-${RM_CMD} -rf ${_tmpdir}
-
-if [ ${_ret} -ne 0 ]; then
-	# break or cancel
-	choose="0"
-fi
-
-PROFILE=$( ${CAT_CMD} ${_tmpfile} )
-${RM_CMD} ${_tmpfile} /tmp/index.conf
 TYPE="fio"
 
 #unset TYPE PROFILE
@@ -95,6 +106,18 @@ TYPE="fio"
 if [ -z "${PROFILE}" ]; then
 	echo "no such benchmark PROFILE specified: ${BENCH_CONF_URL}"
 	exit 1
+fi
+
+# inherit PROFILE for test chains
+export AUTO_PROFILE="${PROFILE}"
+
+if [ -n "${env_file}" ]; then
+	if [ -r "${env_file}" ]; then
+		${MV_CMD} ${env_file} ${env_file}.tmp
+		${GREP_CMD} -v ^AUTO_PROFILE ${env_file}.tmp > ${env_file}
+		${RM_CMD} -f ${env_file}.tmp
+	fi
+	echo "AUTO_PROFILE=\"${PROFILE}\"" >> ${env_file}
 fi
 
 if [ -r /etc/os-release ]; then
@@ -220,8 +243,8 @@ fi
 ${MV_CMD} /tmp/profile.conf.tpl /tmp/profile.fio
 echo "FIO_DIR: ${FIO_DIRECTORY}"
 
-[ -d ${progdir}/fio/tests ] && ${RM_CMD} -rf ${progdir}/fio/tests
-${MKDIR_CMD} -p ${progdir}/fio/tests/4k
+[ -d ${progdir}/fio/tests ] && ${RM_CMD} -rf ${progdir}/fio/tests/${FIO_BS}
+${MKDIR_CMD} -p ${progdir}/fio/tests/${FIO_BS}
 
 # VEIL
 #IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )

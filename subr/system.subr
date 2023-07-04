@@ -51,6 +51,7 @@ basename
 cat
 chmod
 chown
+cp
 curl
 cut
 dd
