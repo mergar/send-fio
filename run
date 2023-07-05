@@ -3,10 +3,10 @@
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
 
-if [ -n "${DESTORY_DISK_DATA}" ]; then
-	DESTORY_DISK_DATA="${DESTORY_DISK_DATA}"
+if [ -n "${DESTROY_DISK_DATA}" ]; then
+	DESTROY_DISK_DATA="${DESTROY_DISK_DATA}"
 else
-	DESTORY_DISK_DATA=0
+	DESTROY_DISK_DATA=0
 fi
 CBSD_PERF_DISTRO=0
 
@@ -77,7 +77,7 @@ select_disks()
 	_tmpfile=$( ${MKTEMP_CMD} )
 
 	for i in ${DISK_LIST}; do
-		if [ "${DESTORY_DISK_DATA}" != "1" ]; then
+		if [ "${DESTROY_DISK_DATA}" != "1" ]; then
 			check_head_disk /dev/${i}
 			_ret=$?
 		else
@@ -93,7 +93,17 @@ select_disks()
 				# Try and find some identification information with camcontrol or atacontrol
 				NEWLINE=$( ${CAMCONTROL_CMD} identify /dev/${i} 2>/dev/null | ${SED_CMD} -ne 's/^device model *//p' )
 				if [ -z "${NEWLINE}" ]; then
-					_tmp=$( ${CAMCONTROL_CMD} devlist /dev/${i} | ${GREP_CMD} '^<' )
+					# regex notes: camcontrol can be (order <device>,pass o_O?:
+					# # camcontrol devlist
+					# <TOSHIBA MG07ACA12TE 0104>         at scbus0 target 0 lun 0 (pass0,ada0)
+					# <TOSHIBA MG07ACA12TE 0104>         at scbus1 target 0 lun 0 (pass1,ada1)
+					# or
+					# # camcontrol devlist
+					#<Samsung SSD 980 1TB 1B4QFXO7>     at scbus8 target 0 lun 1 (pass0,nda0)
+					#<AMI Virtual CDROM0 1.00>          at scbus9 target 0 lun 0 (cd0,pass1)
+					#<AMI Virtual Floppy0 1.00>         at scbus10 target 0 lun 0 (da0,pass2)
+					#<AMI Virtual HDisk1 1.00>          at scbus11 target 0 lun 1 (da5,pass7)
+					_tmp=$( ${CAMCONTROL_CMD} devlist | ${GREP_CMD} -E "(\(|,)${i}(\)|,)"   | ${GREP_CMD} '^<' )
 					NEWLINE=${_tmp#*<}
 					NEWLINE=${_tmp%>*}
 					if [ -n "${NEWLINE}" ]; then
@@ -118,7 +128,27 @@ select_disks()
 				clean_disk_num=$(( clean_disk_num + 1 ))
 				;;
 			1)
-				status="  - ${H2_COLOR}${i} [dirty]${N0_COLOR}"
+				NEWLINE=$( ${CAMCONTROL_CMD} identify /dev/${i} 2>/dev/null | ${SED_CMD} -ne 's/^device model *//p' )
+				if [ -z "${NEWLINE}" ]; then
+					# regex notes: camcontrol can be (order <device>,pass o_O?:
+					# # camcontrol devlist
+					# <TOSHIBA MG07ACA12TE 0104>         at scbus0 target 0 lun 0 (pass0,ada0)
+					# <TOSHIBA MG07ACA12TE 0104>         at scbus1 target 0 lun 0 (pass1,ada1)
+					# or
+					# # camcontrol devlist
+					#<Samsung SSD 980 1TB 1B4QFXO7>     at scbus8 target 0 lun 1 (pass0,nda0)
+					#<AMI Virtual CDROM0 1.00>          at scbus9 target 0 lun 0 (cd0,pass1)
+					#<AMI Virtual Floppy0 1.00>         at scbus10 target 0 lun 0 (da0,pass2)
+					#<AMI Virtual HDisk1 1.00>          at scbus11 target 0 lun 1 (da5,pass7)
+					_tmp=$( ${CAMCONTROL_CMD} devlist | ${GREP_CMD} -E "(\(|,)${i}(\)|,)"   | ${GREP_CMD} '^<' )
+					NEWLINE=${_tmp#*<}
+					NEWLINE=${_tmp%>*}
+					if [ -n "${NEWLINE}" ]; then
+						NEWLINE=$( echo ${NEWLINE} | ${TR_CMD} -d '<>' )
+					fi
+					[ -z "${NEWLINE}" ] && NEWLINE=" <Can't identify model>"
+				fi
+				status="  - ${H2_COLOR}${i} [${NEWLINE} - DIRTY] (needs env DESTROY_DISK_DATA=1 to use this disk) ${N0_COLOR}"
 				;;
 		esac
 		${ECHO} "${status}"
@@ -126,7 +156,7 @@ select_disks()
 
 	if [ -z "${clean_disk}" ]; then
 		${ECHO} "No clean disk found, please add/use empty disk!"
-		[ -n "${DISK_LIST}" ] && ${ECHO} "Or re-run '${pgm}' scrript with DESTORY_DISK_DATA=1 env, e.g.: ${N2_COLOR}env DESTORY_DISK_DATA=1 ${pgm}${N0_COLOR} (Destroy the disk data for I/O perf test)"
+		[ -n "${DISK_LIST}" ] && ${ECHO} "Or re-run '${pgm}' scrript with DESTROY_DISK_DATA=1 env, e.g.: ${N2_COLOR}env DESTROY_DISK_DATA=1 ${pgm}${N0_COLOR} (Destroy the disk data for I/O perf test)"
 		exit 0
 	fi
 
@@ -212,5 +242,7 @@ fi
 
 fio_loop
 ret=$?
+
+${ECHO} "${N2_COLOR}Please type for re-run: ${N2_COLOR}${progdir}/${pgm}${N0_COLOR}"
 
 exit ${ret}

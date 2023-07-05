@@ -47,5 +47,5 @@ endif
 
 if ( "ttyv0" == "$tty" || "ttyu0" == "$tty" || "xc0" == "$tty" ) then
 	cd /root/send-fio
-	./run
+	/root/send-fio/run
 endif

@@ -40,6 +40,13 @@ RWMIXREAD
 # AUTO_XXX vars ?
 [ -n "${env_file}" -a -r "${env_file}" ] && . ${env_file}
 
+# try to get vars from image boot
+_AUTO_PROFILE=$( kenv mfsbsd.fio_auto_profile 2>/dev/null )
+ret=$?
+if [ ${ret} -eq 0 -a -n "${_AUTO_PROFILE}" ]; then
+	[ "${_AUTO_PROFILE}" != "manual" ] && AUTO_PROFILE="${_AUTO_PROFILE}"
+fi
+
 if [ -z "${AUTO_PROFILE}" ]; then
 	# SYNC
 	echo "${CURL_CMD} -o /tmp/index.conf ${BENCH_INDEX_URL}"
