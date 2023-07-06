@@ -4,12 +4,14 @@ progdir="${0%/*}"	# Program directory
 
 alt_path=
 env_file=
+run_test=
 
-while getopts "e:p:d:" opt; do
+while getopts "d:e:p:t:" opt; do
 	case "${opt}" in
+		d) debug="${OPTARG}" ;;
 		e) env_file="${OPTARG}" ;;
 		p) alt_path="${OPTARG}" ;;
-		d) debug="${OPTARG}" ;;
+		t) run_test="${OPTARG}" ;;
 	esac
 	shift $(($OPTIND - 1))
 done
@@ -40,11 +42,23 @@ RWMIXREAD
 # AUTO_XXX vars ?
 [ -n "${env_file}" -a -r "${env_file}" ] && . ${env_file}
 
-# try to get vars from image boot
-_AUTO_PROFILE=$( kenv mfsbsd.fio_auto_profile 2>/dev/null )
-ret=$?
-if [ ${ret} -eq 0 -a -n "${_AUTO_PROFILE}" ]; then
-	[ "${_AUTO_PROFILE}" != "manual" ] && AUTO_PROFILE="${_AUTO_PROFILE}"
+if [ -z "${run_test}" ]; then
+	# try to get vars from image boot
+	_AUTO_PROFILE=$( kenv mfsbsd.fio_auto_profile 2>/dev/null )
+	ret=$?
+
+	if [ ${ret} -eq 0 -a -n "${_AUTO_PROFILE}" ]; then
+		case "${_AUTO_PROFILE}" in
+			all|manual)
+				AUTO_PROFILE=
+				;;
+			*)
+				AUTO_PROFILE="${_AUTO_PROFILE}"
+				;;
+		esac
+	fi
+else
+	AUTO_PROFILE="${run_test}"
 fi
 
 if [ -z "${AUTO_PROFILE}" ]; then
@@ -81,7 +95,6 @@ if [ -z "${AUTO_PROFILE}" ]; then
 		index=$(( index + 1 ))
 	done )
 
-
 	subject="Select test profile (${_def_method}):"
 	${ECHO} "${N1_COLOR}${subject}${N0_COLOR}"
 	#/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method}
@@ -93,7 +106,6 @@ if [ -z "${AUTO_PROFILE}" ]; then
 		# break or cancel
 		choose="0"
 	fi
-
 
 	PROFILE=$( ${CAT_CMD} ${_tmpfile} )
 	${RM_CMD} ${_tmpfile} /tmp/index.conf
@@ -111,7 +123,7 @@ TYPE="fio"
 #	exit 1
 #fi
 if [ -z "${PROFILE}" ]; then
-	echo "no such benchmark PROFILE specified: ${BENCH_CONF_URL}"
+	echo "no such benchmark PROFILE specified: ${PROFILE}"
 	exit 1
 fi
 
@@ -182,37 +194,55 @@ if [ ${ret} -ne 0 ]; then
 fi
 
 # read from per-profile/custom?
-[ -z "${FIO_RWMIXREAD}" ] && FIO_RWMIXREAD="50"
+_AUTO_RWMIXREAD=$( kenv mfsbsd.fio_auto_rwmixread 2>/dev/null )
+ret=$?
 
-case "${PROFILE}" in
-	rw|randrw)
-		for i in 1 2 3; do
-			${ECHO} "${N1_COLOR}mixed workload is specified: ${N2_COLOR}${PROFILE}${N1_COLOR}"
-			${ECHO} "${N1_COLOR}Please adjust/confirm RWMIXREAD values (Default: ${N2_COLOR}${FIO_RWMIXREAD}${N1_COLOR})${N0_COLOR}"
-			${ECHO} "${N1_COLOR} (For example, --rwmixread=${N2_COLOR}30${N1_COLOR} would mean that ${N2_COLOR}30%${N1_COLOR} of the I/O will be reads and ${N2_COLOR}70%${N1_COLOR} will be writes${N0_COLOR}"
-			read _RWMIXREAD
-			if [ -z "${_RWMIXREAD}" ]; then
-				${ECHO} "${N1_COLOR}Confirmed: ${N2_COLOR}${FIO_RWMIXREAD}${N0_COLOR}"
-				break
-			fi
-			case "${_RWMIXREAD}" in
-				''|*[!0-9]*)
-					${ECHO} "${N1_COLOR}Wrong valued, please use 0-100 values${N0_COLOR}"
-					continue
-					;;
-				*)
-					if [ ${_RWMIXREAD} -gt 100 ]; then
+_AUTO_RWMIXREAD="50"
+ret=0
+
+if [ ${ret} -eq 0 -a -n "${_AUTO_RWMIXREAD}" ]; then
+	AUTO_RWMIXREAD="${_AUTO_RWMIXREAD}"
+else
+	AUTO_RWMIXREAD=
+fi
+
+if [ -n "${AUTO_RWMIXREAD}" ]; then
+	FIO_RWMIXREAD="${AUTO_RWMIXREAD}"
+else
+	[ -z "${FIO_RWMIXREAD}" ] && FIO_RWMIXREAD="50"
+fi
+
+if [ -z "${AUTO_RWMIXREAD}" ]; then
+	case "${PROFILE}" in
+		rw|randrw)
+			for i in 1 2 3; do
+				${ECHO} "${N1_COLOR}mixed workload is specified: ${N2_COLOR}${PROFILE}${N1_COLOR}"
+				${ECHO} "${N1_COLOR}Please adjust/confirm RWMIXREAD values (Default: ${N2_COLOR}${FIO_RWMIXREAD}${N1_COLOR})${N0_COLOR}"
+				${ECHO} "${N1_COLOR} (For example, --rwmixread=${N2_COLOR}30${N1_COLOR} would mean that ${N2_COLOR}30%${N1_COLOR} of the I/O will be reads and ${N2_COLOR}70%${N1_COLOR} will be writes${N0_COLOR}"
+				read _RWMIXREAD
+				if [ -z "${_RWMIXREAD}" ]; then
+					${ECHO} "${N1_COLOR}Confirmed: ${N2_COLOR}${FIO_RWMIXREAD}${N0_COLOR}"
+					break
+				fi
+				case "${_RWMIXREAD}" in
+					''|*[!0-9]*)
 						${ECHO} "${N1_COLOR}Wrong valued, please use 0-100 values${N0_COLOR}"
 						continue
-					fi
-					${ECHO} "${N1_COLOR}Adjusted: ${N2_COLOR}${_RWMIXREAD}${N0_COLOR}"
-					FIO_RWMIXREAD="${_RWMIXREAD}"
-					break
-					;;
-			esac
-		done
-		;;
-esac
+						;;
+					*)
+						if [ ${_RWMIXREAD} -gt 100 ]; then
+							${ECHO} "${N1_COLOR}Wrong valued, please use 0-100 values${N0_COLOR}"
+							continue
+						fi
+						${ECHO} "${N1_COLOR}Adjusted: ${N2_COLOR}${_RWMIXREAD}${N0_COLOR}"
+						FIO_RWMIXREAD="${_RWMIXREAD}"
+						break
+						;;
+				esac
+			done
+			;;
+	esac
+fi
 
 TYPE_UPPER=$( echo "${TYPE}" | ${TR_CMD} '[:lower:]' '[:upper:]' )
 

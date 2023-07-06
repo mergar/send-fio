@@ -29,9 +29,52 @@ set +e
 # main loop. can be overriden via subr/${OPSYS}.subr
 fio_loop()
 {
-	${progdir}/run-fio && ${progdir}/send-fio
+	local _auto_profile_env _auto_profile
+	local _ret _all_profiles
+
+	_auto_profile_env=$( kenv mfsbsd.fio_auto_profile 2>/dev/null )
 	_ret=$?
-	return ${_ret}
+
+	_auto_profile_env="all"
+	_ret=0
+
+	if [ ${_ret} -eq 0 -a -n "${_auto_profile_env}" ]; then
+			case "${_auto_profile_env}" in
+				all)
+					echo "${CURL_CMD} -o /tmp/index.conf ${BENCH_INDEX_URL}"
+					${CURL_CMD} -s -o /tmp/index.conf ${BENCH_INDEX_URL} > /tmp/curl.$$ 2>&1
+					ret=$?
+
+					trap "${RM_CMD} -f /tmp/curl.$$" HUP INT ABRT BUS TERM EXIT
+
+					${CP_CMD} -a /tmp/curl.$$ /tmp/curl
+
+					if [ ${ret} -ne 0 ]; then
+						echo "curl error: ${ret}"
+						${CAT_CMD} /tmp/curl.$$
+						exit 1
+					else
+						echo "fetched config:"
+						${CAT_CMD} /tmp/index.conf
+						echo
+					fi
+					_all_profiles=$( ${CAT_CMD} /tmp/index.conf | ${CUT_CMD} -d : -f1 | ${TR_CMD} '\r\n' ' ' )
+					;;
+				*)
+					_all_profiles="${_auto_profile_env}"
+					;;
+			esac
+	fi
+
+	if [ -n "${_all_profiles}" ]; then
+		for i in ${_all_profiles}; do
+			${progdir}/run-fio -t ${i} && ${progdir}/send-fio
+		done
+	else
+		${progdir}/run-fio && ${progdir}/send-fio
+	fi
+
+	return 0
 }
 
 check_head_disk()
