@@ -304,13 +304,19 @@ ${MKDIR_CMD} -p "${FIO_DIRECTORY}"
 CBSD_PERF_DISTRO=
 [ -r /etc/rc.conf ] && . /etc/rc.conf
 if [ "${CBSD_PERF_DISTRO}" = "1" ]; then
-	cp -a /tmp/profile.fio /tmp/profile.bak
-	grep -v directory /tmp/profile.bak > /tmp/profile.fio
+	${CP_CMD} -a /tmp/profile.fio /tmp/profile.bak
+	${GREP_CMD} -v directory /tmp/profile.bak > /tmp/profile.fio
 	if [ -z "${FIO_SELECTED_DISK}" ]; then
 		echo "No such FIO_SELECTED_DISK"
 		exit 1
 	fi
 	echo "filename=${FIO_SELECTED_DISK}" >> /tmp/profile.fio
+
+	i=$( echo ${FIO_SELECTED_DISK} | sed s#/dev/##g )
+	dsk_info ${i}
+	conv2human ${BSIZE}
+	SIZE="${human_val}"
+	echo "raw disk: ${FIO_SELECTED_DISK},size: ${SIZE}, model: ${DSK_INFO}" > ${progdir}/fio/tests/extra_info.txt
 fi
 
 # VEIL

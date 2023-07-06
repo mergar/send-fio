@@ -130,6 +130,39 @@ if [ -r /etc/os-release ]; then
 	fi
 fi
 
+# return DSK_INFO (text/vendor info for /dev/$1 ) and BSIZE (size in bytes)
+dsk_info()
+{
+	local _dev="${1}"
+
+	DSK_INFO=
+	BSIZE=
+
+	# Try and find some identification information with camcontrol or atacontrol
+	DSK_INFO=$( ${CAMCONTROL_CMD} identify /dev/${_dev} 2>/dev/null | ${SED_CMD} -ne 's/^device model *//p' )
+	if [ -z "${DSK_INFO}" ]; then
+		# regex notes: camcontrol can be (order <device>,pass o_O?:
+		# # camcontrol devlist
+		# <TOSHIBA MG07ACA12TE 0104>         at scbus0 target 0 lun 0 (pass0,ada0)
+		# <TOSHIBA MG07ACA12TE 0104>         at scbus1 target 0 lun 0 (pass1,ada1)
+		# or
+		# # camcontrol devlist
+		#<Samsung SSD 980 1TB 1B4QFXO7>     at scbus8 target 0 lun 1 (pass0,nda0)
+		#<AMI Virtual CDROM0 1.00>          at scbus9 target 0 lun 0 (cd0,pass1)
+		#<AMI Virtual Floppy0 1.00>         at scbus10 target 0 lun 0 (da0,pass2)
+		#<AMI Virtual HDisk1 1.00>          at scbus11 target 0 lun 1 (da5,pass7)
+		DSK_INFO=$( ${CAMCONTROL_CMD} devlist | ${GREP_CMD} -E "(\(|,)${i}(\)|,)"   | ${GREP_CMD} '^<' )
+		DSK_INFO=${DSK_INFO#*<}
+		DSK_INFO=${DSK_INFO%>*}
+		if [ -n "${DSK_INFO}" ]; then
+			DSK_INFO=$( echo ${DSK_INFO} | ${TR_CMD} -d '<>' )
+		fi
+		[ -z "${DSK_INFO}" ] && DSK_INFO=" <Can't identify model>"
+	fi
+
+	BSIZE=$( ${DISKINFO_CMD} /dev/${i} 2>/dev/null | ${AWK_CMD} '{printf $3}' )
+	[ -z "${BSIZE}" ] && BSIZE="0"
+}
 
 ###
 fi

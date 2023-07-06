@@ -35,8 +35,9 @@ fio_loop()
 	_auto_profile_env=$( kenv mfsbsd.fio_auto_profile 2>/dev/null )
 	_ret=$?
 
-	_auto_profile_env="all"
-	_ret=0
+	# debug
+#	_auto_profile_env="all"
+#	_ret=0
 
 	if [ ${_ret} -eq 0 -a -n "${_auto_profile_env}" ]; then
 			case "${_auto_profile_env}" in
@@ -132,36 +133,13 @@ select_disks()
 				status="${clean_disk_num} - ${N2_COLOR}${i} ${H2_COLOR}[clean]${N0_COLOR}"
 				export clean_disk_name${clean_disk_num}="/dev/${i}"
 				[ ${clean_disk_num} -eq 1 ] && _def_method="${i}"
-
-				# Try and find some identification information with camcontrol or atacontrol
-				NEWLINE=$( ${CAMCONTROL_CMD} identify /dev/${i} 2>/dev/null | ${SED_CMD} -ne 's/^device model *//p' )
-				if [ -z "${NEWLINE}" ]; then
-					# regex notes: camcontrol can be (order <device>,pass o_O?:
-					# # camcontrol devlist
-					# <TOSHIBA MG07ACA12TE 0104>         at scbus0 target 0 lun 0 (pass0,ada0)
-					# <TOSHIBA MG07ACA12TE 0104>         at scbus1 target 0 lun 0 (pass1,ada1)
-					# or
-					# # camcontrol devlist
-					#<Samsung SSD 980 1TB 1B4QFXO7>     at scbus8 target 0 lun 1 (pass0,nda0)
-					#<AMI Virtual CDROM0 1.00>          at scbus9 target 0 lun 0 (cd0,pass1)
-					#<AMI Virtual Floppy0 1.00>         at scbus10 target 0 lun 0 (da0,pass2)
-					#<AMI Virtual HDisk1 1.00>          at scbus11 target 0 lun 1 (da5,pass7)
-					_tmp=$( ${CAMCONTROL_CMD} devlist | ${GREP_CMD} -E "(\(|,)${i}(\)|,)"   | ${GREP_CMD} '^<' )
-					NEWLINE=${_tmp#*<}
-					NEWLINE=${_tmp%>*}
-					if [ -n "${NEWLINE}" ]; then
-						NEWLINE=$( echo ${NEWLINE} | ${TR_CMD} -d '<>' )
-					fi
-					[ -z "${NEWLINE}" ] && NEWLINE=" <Can't identify model>"
-				fi
-				BSIZE=$( ${DISKINFO_CMD} /dev/${i} 2>/dev/null | ${AWK_CMD} '{printf $3}' )
-				[ -z "${BSIZE}" ] && BSIZE="0"
+				dsk_info ${i}
 
 				conv2human ${BSIZE}
 				SIZE="${human_val}"
 
 				echo "0:${i}:" >> ${_tmpdir}/${i}.item
-				${ECHO} "${H3_COLOR}${NEWLINE}, Size: ${SIZE}${N0_COLOR}" > ${_tmpdir}/${i}.descr
+				${ECHO} "${H3_COLOR}${DSK_INFO}, Size: ${SIZE}${N0_COLOR}" > ${_tmpdir}/${i}.descr
 
 				if [ -z "${clean_disk}" ]; then
 					clean_disk="/dev/${i}"
@@ -171,27 +149,11 @@ select_disks()
 				clean_disk_num=$(( clean_disk_num + 1 ))
 				;;
 			1)
-				NEWLINE=$( ${CAMCONTROL_CMD} identify /dev/${i} 2>/dev/null | ${SED_CMD} -ne 's/^device model *//p' )
-				if [ -z "${NEWLINE}" ]; then
-					# regex notes: camcontrol can be (order <device>,pass o_O?:
-					# # camcontrol devlist
-					# <TOSHIBA MG07ACA12TE 0104>         at scbus0 target 0 lun 0 (pass0,ada0)
-					# <TOSHIBA MG07ACA12TE 0104>         at scbus1 target 0 lun 0 (pass1,ada1)
-					# or
-					# # camcontrol devlist
-					#<Samsung SSD 980 1TB 1B4QFXO7>     at scbus8 target 0 lun 1 (pass0,nda0)
-					#<AMI Virtual CDROM0 1.00>          at scbus9 target 0 lun 0 (cd0,pass1)
-					#<AMI Virtual Floppy0 1.00>         at scbus10 target 0 lun 0 (da0,pass2)
-					#<AMI Virtual HDisk1 1.00>          at scbus11 target 0 lun 1 (da5,pass7)
-					_tmp=$( ${CAMCONTROL_CMD} devlist | ${GREP_CMD} -E "(\(|,)${i}(\)|,)"   | ${GREP_CMD} '^<' )
-					NEWLINE=${_tmp#*<}
-					NEWLINE=${_tmp%>*}
-					if [ -n "${NEWLINE}" ]; then
-						NEWLINE=$( echo ${NEWLINE} | ${TR_CMD} -d '<>' )
-					fi
-					[ -z "${NEWLINE}" ] && NEWLINE=" <Can't identify model>"
-				fi
-				status="  - ${H2_COLOR}${i} [${NEWLINE} - DIRTY] (needs env DESTROY_DISK_DATA=1 to use this disk) ${N0_COLOR}"
+				dsk_info ${i}
+				conv2human ${BSIZE}
+				SIZE="${human_val}"
+
+				status="  - ${H2_COLOR}${i} [${DSK_INFO}, Size: ${SIZE} - DIRTY] (needs env DESTROY_DISK_DATA=1 to use this disk) ${N0_COLOR}"
 				;;
 		esac
 		${ECHO} "${status}"
