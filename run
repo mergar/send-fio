@@ -19,6 +19,9 @@ CURR_VERSION="0.1"
 USE_TOR=NO
 DO_LOG_NET_TRAFFIC=1
 
+# from env
+FIO_AUTO_PROFILE=
+
 set -e
 . ${progdir}/config
 . ${progdir}/subr/color.subr
@@ -32,12 +35,16 @@ fio_loop()
 	local _auto_profile_env _auto_profile
 	local _ret _all_profiles
 
-	_auto_profile_env=$( kenv mfsbsd.fio_auto_profile 2>/dev/null )
-	_ret=$?
+	if [ -z "${FIO_AUTO_PROFILE}" ]; then
+		_auto_profile_env=$( kenv mfsbsd.fio_auto_profile 2>/dev/null )
+		_ret=$?
+	else
+		# get from env
+		_auto_profile_env="${FIO_AUTO_PROFILE}"
+		_ret=0
+	fi
 
 	# debug
-#	_auto_profile_env="all"
-#	_ret=0
 
 	if [ ${_ret} -eq 0 -a -n "${_auto_profile_env}" ]; then
 			case "${_auto_profile_env}" in

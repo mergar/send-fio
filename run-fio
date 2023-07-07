@@ -61,7 +61,7 @@ else
 	AUTO_PROFILE="${run_test}"
 fi
 
-if [ -z "${AUTO_PROFILE}" ]; then
+if [ -z "${AUTO_PROFILE}" -o "${AUTO_PROFILE}" = "manual" ]; then
 	# SYNC
 	echo "${CURL_CMD} -o /tmp/index.conf ${BENCH_INDEX_URL}"
 	${CURL_CMD} -s -o /tmp/index.conf ${BENCH_INDEX_URL} > /tmp/curl.$$ 2>&1
