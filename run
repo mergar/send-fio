@@ -19,9 +19,6 @@ CURR_VERSION="0.1"
 USE_TOR=NO
 DO_LOG_NET_TRAFFIC=1
 
-# from env
-FIO_AUTO_PROFILE=
-
 set -e
 . ${progdir}/config
 . ${progdir}/subr/color.subr

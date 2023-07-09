@@ -23,6 +23,13 @@ set -e
 . ${progdir}/subr/network.subr
 set +e
 
+print_stats()
+{
+	${ECHO} "${H2_COLOR}Read: ${R_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${R_KB}${N1_COLOR} KB/s )${N0_COLOR}"
+	${ECHO} "${H2_COLOR}Write: ${W_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${W_KB}${N1_COLOR} KB/s )${N0_COLOR}"
+}
+
+
 ## MAIN
 init_color
 
@@ -193,26 +200,24 @@ if [ ${ret} -ne 0 ]; then
 	exit 1
 fi
 
-# read from per-profile/custom?
-_AUTO_RWMIXREAD=$( kenv mfsbsd.fio_auto_rwmixread 2>/dev/null )
-ret=$?
+# get from env first
+if [ -z "${FIO_AUTO_RWMIXREAD}" ]; then
+	# read from per-profile/custom?
+	_FIO_AUTO_RWMIXREAD=$( kenv mfsbsd.fio_auto_rwmixread 2>/dev/null )
+	ret=$?
 
-_AUTO_RWMIXREAD="50"
-ret=0
-
-if [ ${ret} -eq 0 -a -n "${_AUTO_RWMIXREAD}" ]; then
-	AUTO_RWMIXREAD="${_AUTO_RWMIXREAD}"
+	if [ ${ret} -eq 0 -a -n "${_FIO_AUTO_RWMIXREAD}" ]; then
+		FIO_RWMIXREAD="${_FIO_AUTO_RWMIXREAD}"
+		FIO_AUTO_RWMIXREAD="${_FIO_AUTO_RWMIXREAD}"
+	fi
 else
-	AUTO_RWMIXREAD=
+	FIO_RWMIXREAD="${FIO_AUTO_RWMIXREAD}"
 fi
 
-if [ -n "${AUTO_RWMIXREAD}" ]; then
-	FIO_RWMIXREAD="${AUTO_RWMIXREAD}"
-else
-	[ -z "${FIO_RWMIXREAD}" ] && FIO_RWMIXREAD="50"
-fi
+[ -z "${FIO_RWMIXREAD}" ] && FIO_RWMIXREAD="50"
 
-if [ -z "${AUTO_RWMIXREAD}" ]; then
+# interactive
+if [ -z "${FIO_AUTO_RWMIXREAD}" ]; then
 	case "${PROFILE}" in
 		rw|randrw)
 			for i in 1 2 3; do
@@ -343,6 +348,28 @@ ${GREP_CMD} "^[a-z]*=" /tmp/profile.fio | while read a; do
 			;;
 	esac
 done
+
+# print result
+_json_data="${progdir}/fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json"
+
+READ_BW_BYTES=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0].read.bw_bytes' | ${TR_CMD} -d '"' )
+WRITE_BW_BYTES=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0].write.bw_bytes' | ${TR_CMD} -d '"' )
+RUNTIME=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0]."job options".runtime' | ${TR_CMD} -d '"' )
+
+R_KB=$(( READ_BW_BYTES / 1024 ))
+R_MB=$(( READ_BW_BYTES / 1024 / 1024 ))
+W_KB=$(( WRITE_BW_BYTES / 1024 ))
+W_MB=$(( WRITE_BW_BYTES / 1024 / 1024 ))
+
+echo
+echo
+${ECHO} "${H1_COLOR}======== [${PROFILE}] [bs:${FIO_BS},depth:${FIO_DEPTH},jobs:${FIO_NUMJOBS},rwmixread:${FIO_RWMIXREAD}] result ========:${N0_COLOR}"
+print_stats | ${COLUMN_CMD} -t
+
+#printf "${N1_COLOR}Read: ${H2_COLOR}%-10s${N1_COLOR} MB/s ( ${H2_COLOR}%-16s${N1_COLOR} KB/s )${N0_COLOR}\n" ${R_MB} ${R_KB}
+# ${H2_COLOR}${R_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${R_KB}${N1_COLOR} KB/s )${N0_COLOR}"
+#printf "${N1_COLOR}Write: ${H2_COLOR}{${W_MB}${N1_COLOR} MB/s ( ${H2_COLOR{${W_KB}${N1_COLOR} KB/s )${N0_COLOR}"
+echo
 
 # Clean
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then

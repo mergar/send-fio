@@ -1,8 +1,12 @@
 #!/bin/sh
-
+exit 0
 # Send FIO statistics to perf server
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
+
+# env
+[ -z "${PERF_SPACEVM_SEND}" ] && PERF_SPACEVM_SEND="1"
+[ "${PERF_SPACEVM_SEND}" = "0" ] && exit 0
 
 set -e
 . ${progdir}/config

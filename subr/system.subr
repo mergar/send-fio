@@ -49,6 +49,7 @@ MAIN_CMD="
 awk
 basename
 cat
+column
 chmod
 chown
 cp
