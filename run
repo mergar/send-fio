@@ -45,7 +45,6 @@ fio_loop()
 	fi
 
 	# debug
-
 	if [ ${_ret} -eq 0 -a -n "${_auto_profile_env}" ]; then
 			case "${_auto_profile_env}" in
 				all)
