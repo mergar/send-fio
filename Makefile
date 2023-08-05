@@ -1,19 +1,19 @@
-BRAND="spacevm"
+BRAND=spacevm
 PREFIX?=/usr/local
 SHARE_DIR?=share
 SCRIPT_SHARE_DIR?=${BRAND}
 BINDIR?=bin
 CC?=cc
 OSTYPE?= uname -s
-STRIP="strip"
+STRIP=strip
 RM="rm"
-RMDIR="rmdir"
+RMDIR=rmdir
 CP="cp"
-INSTALL="install"
-MKDIR="mkdir"
+INSTALL=install
+MKDIR=mkdir
 CFLAGS?= -static -O2
 
-.SILENT:
+#.SILENT:
 
 all: bin
 

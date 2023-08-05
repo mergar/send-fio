@@ -14,4 +14,4 @@ fio/tests.tgz
 .bash_history
 .selected_editor
 .lesshst
-bin
+bin/spacevm-select-item

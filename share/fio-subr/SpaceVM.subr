@@ -36,20 +36,20 @@ fio_loop()
 	#/dev/mapper/3600143801259dcf30001000001640000 on /storages/gfs2/gfs2_3053831c type gfs2 (rw,noatime,nodiratime,debug,x-systemd.automount,_netdev)
 
 	if [ -r /tmp/run-fio-spacevm-volumes.conf ]; then
-		[ ! -d ${progdir}/fio/tests ] && ${MKDIR_CMD} -p ${progdir}/fio/tests
+		[ ! -d /tmp/spacevm-perf-fio/tests ] && ${MKDIR_CMD} -p /tmp/spacevm-perf-fio/tests
 
 		# pass environment file for AUTO_PROFILE
 		_env_file=$( mktemp )
 
 		${CAT_CMD} /tmp/run-fio-spacevm-volumes.conf | while read _fs _mnt; do
 			IN_USE=$( df -h ${_mnt} | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
-			echo "fs:${_fs},pool:${_mnt},inuse:${IN_USE}" > ${progdir}/fio/tests/extra_info.txt
-			echo "${progdir}/fio/tests/extra_info.txt saved"
-			${CAT_CMD} ${progdir}/fio/tests/extra_info.txt
+			echo "fs:${_fs},pool:${_mnt},inuse:${IN_USE}" > /tmp/spacevm-perf-fio/tests/extra_info.txt
+			echo "/tmp/spacevm-perf-fio/tests/extra_info.txt saved"
+			${CAT_CMD} /tmp/spacevm-perf-fio/tests/extra_info.txt
 			# Linux require </dev/tty ;-/
 			${ECHO} "${N1_COLOR}Pool: ${N2_COLOR}${_mnt}${N0_COLOR}"
 			${progdir}/run-fio -e ${_env_file} -p ${_mnt}/tmp/test </dev/tty && ${progdir}/send-fio
-			${RM_CMD} -f ${progdir}/fio/tests/extra_info.txt
+			${RM_CMD} -f /tmp/spacevm-perf-fio/tests/extra_info.txt
 		done
 
 		[ -r ${_env_file} ] && ${RM_CMD} -f ${_env_file}

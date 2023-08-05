@@ -1,0 +1,69 @@
+#!/bin/sh
+# Send FIO statistics to perf server
+pgm="${0##*/}"		# Program basename
+progdir="${0%/*}"	# Program directory
+
+# env
+[ -z "${PERF_SPACEVM_SEND}" ] && PERF_SPACEVM_SEND="1"
+[ "${PERF_SPACEVM_SEND}" = "0" ] && exit 0
+
+set -e
+. /usr/local/etc/spacevm-perf-fio.conf
+. /usr/local/share/spacevm/fio-subr/SpaceVM.subr
+. /usr/local/share/spacevm/fio-subr/color.subr
+. /usr/local/share/spacevm/fio-subr/system.subr
+. /usr/local/share/spacevm/fio-subr/network.subr
+set +e
+
+#
+#data="/tmp/x5.tgz"
+#curl -sS -X POST -H "Content-Type: application/gzip" --data-binary "@$data" ${checkin_server}/scripts/report_system.php?token=ssssssssssssssssss
+
+## MAIN: processing begins here
+##
+# network setup
+init_color
+
+#setup_proxies
+#${ECHO} "${N1_COLOR}Checkin server: ${N2_COLOR}${checkin_server}${N0_COLOR}"
+#url="${checkin_server}"
+
+#test_connection
+#_ret=$?
+#if [ ${_ret} -ne 0 ]; then
+#	echo "failed: test_connection"
+#	exit ${_ret}
+#fi
+#log "INIT" "Connected to ${checkin_server_description}"
+
+# prepare
+get_id_token
+_ret=$?
+if [ ${_ret} -ne 0 ]; then
+	echo "failed: get_id_token"
+	exit ${_ret}
+fi
+
+# begin
+enable_token
+_ret=$?
+if [ ${_ret} -ne 0 ]; then
+	echo "failed: enable_token"
+	exit ${_ret}
+fi
+
+report_system
+_ret=$?
+if [ ${_ret} -ne 0 ]; then
+	echo "failed: report_system"
+	exit ${_ret}
+fi
+
+disable_token
+_ret=$?
+if [ ${_ret} -ne 0 ]; then
+	echo "failed: disable_token"
+	exit ${_ret}
+fi
+
+exit ${_ret}
