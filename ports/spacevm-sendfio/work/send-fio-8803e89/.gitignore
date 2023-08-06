@@ -1,0 +1,17 @@
+fio/tests
+fio/tests.tgz
+.bashrc
+.cache/
+.config/
+.cshrc
+.history
+.k5login
+.local/
+.login
+.profile
+.shrc
+.ssh
+.bash_history
+.selected_editor
+.lesshst
+bin/spacevm-select-item

@@ -1,0 +1,8 @@
+rel="14.0-CURRENT"
+arch="amd64"
+opsys="FreeBSD 14.0-CURRENT"
+cpus="8"
+vendor="AMD"
+cpu_type="Ryzen 7 PRO 3700U w/ Radeon Vega Mobile Gfx"
+is_virtual="NONE(20QKS1812F)"
+bench_type="fio"
