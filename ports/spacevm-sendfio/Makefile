@@ -16,7 +16,7 @@ RUN_DEPENDS=	curl:ftp/curl \
 USE_GITHUB=	yes
 GH_ACCOUNT=	mergar
 GH_PROJECT=	send-fio
-GH_TAGNAME=	8803e89
+GH_TAGNAME=	12050ac
 
 SUB_FILES=	pkg-message
 
