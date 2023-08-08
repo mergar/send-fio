@@ -16,7 +16,7 @@ RUN_DEPENDS=	curl:ftp/curl \
 USE_GITHUB=	yes
 GH_ACCOUNT=	mergar
 GH_PROJECT=	send-fio
-GH_TAGNAME=	12050ac
+GH_TAGNAME=	64b46fd
 
 SUB_FILES=	pkg-message
 
@@ -31,18 +31,5 @@ do-install:
 	${CP} -a ${WRKSRC}/share/fio-subr ${STAGEDIR}${PREFIX}/share/spacevm/
 	${INSTALL_DATA} ${WRKSRC}/etc/spacevm-perf-fio.conf \
 		${STAGEDIR}${PREFIX}/etc/spacevm-perf-fio.conf.sample
-
-
-#        ${INSTALL_PROGRAM} -s ${WRKSRC}/bin/cbsdsh/cbsd ${STAGEDIR}${PREFIX}/bin
-#        ${INSTALL_PROGRAM} -s ${WRKSRC}/misc/src/sipcalc/sipcalc \
-#                ${STAGEDIR}${PREFIX}/cbsd/misc/sipcalc
-#        ${RM} -rf ${STAGEDIR}${PREFIX}/cbsd/bin/cbsdsh \
-#                ${STAGEDIR}${PREFIX}/cbsd/bin/src \
-#                ${STAGEDIR}${PREFIX}/cbsd/lib \
-#                ${STAGEDIR}${PREFIX}/cbsd/misc/src \
-#                ${STAGEDIR}${PREFIX}/cbsd/sbin/src \
-#                ${STAGEDIR}${PREFIX}/cbsd/tools/src
-#        ${INSTALL_MAN} ${WRKSRC}/man/cbsd.8 ${STAGEDIR}${PREFIX}/man/man8/cbsd.8
-
 
 .include <bsd.port.mk>
