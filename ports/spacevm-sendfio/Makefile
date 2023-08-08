@@ -20,4 +20,27 @@ GH_TAGNAME=	12050ac
 
 SUB_FILES=	pkg-message
 
+do-install:
+	${MKDIR} ${STAGEDIR}${PREFIX}/share/spacevm
+	${CP} -a ${WRKSRC}/bin/spacevm-perf-fio-fioloop ${STAGEDIR}${PREFIX}/bin/
+	${CP} -a ${WRKSRC}/bin/spacevm-perf-fio-run ${STAGEDIR}${PREFIX}/bin/
+	${CP} -a ${WRKSRC}/bin/spacevm-perf-fio-send ${STAGEDIR}${PREFIX}/bin/
+	${CP} -a ${WRKSRC}/bin/spacevm-select-item ${STAGEDIR}${PREFIX}/bin/
+	#${CP} -a ${WRKSRC}/share/fio ${STAGEDIR}${PREFIX}/share/spacevm/
+	${CP} -a ${WRKSRC}/share/fio-scripts ${STAGEDIR}${PREFIX}/share/spacevm/
+	${CP} -a ${WRKSRC}/share/fio-subr ${STAGEDIR}${PREFIX}/share/spacevm/
+
+
+#        ${INSTALL_PROGRAM} -s ${WRKSRC}/bin/cbsdsh/cbsd ${STAGEDIR}${PREFIX}/bin
+#        ${INSTALL_PROGRAM} -s ${WRKSRC}/misc/src/sipcalc/sipcalc \
+#                ${STAGEDIR}${PREFIX}/cbsd/misc/sipcalc
+#        ${RM} -rf ${STAGEDIR}${PREFIX}/cbsd/bin/cbsdsh \
+#                ${STAGEDIR}${PREFIX}/cbsd/bin/src \
+#                ${STAGEDIR}${PREFIX}/cbsd/lib \
+#                ${STAGEDIR}${PREFIX}/cbsd/misc/src \
+#                ${STAGEDIR}${PREFIX}/cbsd/sbin/src \
+#                ${STAGEDIR}${PREFIX}/cbsd/tools/src
+#        ${INSTALL_MAN} ${WRKSRC}/man/cbsd.8 ${STAGEDIR}${PREFIX}/man/man8/cbsd.8
+
+
 .include <bsd.port.mk>

@@ -1,0 +1,11 @@
+bin/spacevm-perf-fio-fioloop
+bin/spacevm-perf-fio-run
+bin/spacevm-perf-fio-send
+bin/spacevm-select-item
+share/spacevm/fio-scripts/extract.sh
+share/spacevm/fio-scripts/var_db/send-perf-stats
+share/spacevm/fio-subr/SpaceVM.subr
+share/spacevm/fio-subr/color.subr
+share/spacevm/fio-subr/network.subr
+share/spacevm/fio-subr/system.subr
+@dir share/spacevm
