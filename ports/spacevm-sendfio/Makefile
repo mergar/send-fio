@@ -29,6 +29,8 @@ do-install:
 	#${CP} -a ${WRKSRC}/share/fio ${STAGEDIR}${PREFIX}/share/spacevm/
 	${CP} -a ${WRKSRC}/share/fio-scripts ${STAGEDIR}${PREFIX}/share/spacevm/
 	${CP} -a ${WRKSRC}/share/fio-subr ${STAGEDIR}${PREFIX}/share/spacevm/
+	${INSTALL_DATA} ${WRKSRC}/etc/spacevm-perf-fio.conf \
+		${STAGEDIR}${PREFIX}/etc/spacevm-perf-fio.conf.sample
 
 
 #        ${INSTALL_PROGRAM} -s ${WRKSRC}/bin/cbsdsh/cbsd ${STAGEDIR}${PREFIX}/bin

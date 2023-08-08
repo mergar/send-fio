@@ -183,8 +183,8 @@ select_disks()
 	local subject="Select base sources:"
 	${ECHO} "${N1_COLOR}${subject}${N0_COLOR}"
 
-	#/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method}
-	/usr/locall/bin/spacevm-select-item ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
+	#/usr/local/bin/spacevm-perf-fio-run ${_tmpdir} ${_tmpfile} item ${_def_method}
+	/usr/local/bin/spacevm-select-item ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
 	_ret=$?
 	${RM_CMD} -rf ${_tmpdir}
 

@@ -8,4 +8,5 @@ share/spacevm/fio-subr/SpaceVM.subr
 share/spacevm/fio-subr/color.subr
 share/spacevm/fio-subr/network.subr
 share/spacevm/fio-subr/system.subr
+@sample etc/spacevm-perf-fio.conf.sample
 @dir share/spacevm

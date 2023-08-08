@@ -105,8 +105,8 @@ if [ -z "${AUTO_PROFILE}" -o "${AUTO_PROFILE}" = "manual" ]; then
 
 	subject="Select test profile (${_def_method}):"
 	${ECHO} "${N1_COLOR}${subject}${N0_COLOR}"
-	#/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method}
-	/root/select_jail ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
+	#/usr/local/bin/spacevm-select-item ${_tmpdir} ${_tmpfile} item ${_def_method}
+	/usr/local/bin/spacevm-select-item ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
 	_ret=$?
 	${RM_CMD} -rf ${_tmpdir}
 
