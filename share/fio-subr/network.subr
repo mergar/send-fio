@@ -478,14 +478,15 @@ EOF
 	echo_begin "${N1_COLOR}Posting perf statistics to: ${N2_COLOR}${checkin_server_description}${N0_COLOR}"
 	#echo "&bench_type=${TYPE}&bench_profile=${PROFILE}&fio_rbw_mb=${R_MB}&fio_rbw_kb=${RKB}&fio_wbw_mb=${W_MB}&fio_wbw_kb=${W_KB}"
 #	do_http_request_check_status "GET" "/scripts/report_system.php?token=${TOKEN}&key=${KEY}" "" "" "OS statistics submission"
-	${CURL_CMD} -sS -X POST -H "Content-Type: application/gzip" --data-binary "@$data" "${checkin_server}/scripts/report_system.php?token=${TOKEN}&key=${KEY}"
+	_res=$( ${CURL_CMD} -sS -X POST -H "Content-Type: application/gzip" --data-binary "@$data" "${checkin_server}/scripts/report_system.php?token=${TOKEN}&key=${KEY}" )
 	ret=$?
 	if [ ${ret} -ne 0 ]; then
 		echo "Curl POST failed"
 		exit ${ret}
 	fi
 	echo_end_success
-	log "INFO" "Posted OS statistics to ${checkin_server_description}"
+	${ECHO} "${N1_COLOR}Uploaded, Thank you!${N0_COLOR}"
+	echo "${_res}"
 }
 
 ###
