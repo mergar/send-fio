@@ -5,6 +5,11 @@ spacevm-perf-fio is now installed. To run:
 
  spacevm-perf-fio-run
 
+useful environment variables:
+
+  FIO_AUTO_PROFILE=[all|<name_of_profile>]
+  FIO_XXX_PARAMS=
+
 Or:
 
  spacevm-perf-fio-fioloop
