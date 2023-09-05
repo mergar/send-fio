@@ -73,10 +73,10 @@ fio_loop()
 
 	if [ -n "${_all_profiles}" ]; then
 		for i in ${_all_profiles}; do
-			/usr/local/bin/spacevm-perf-fio-fioloop -t ${i} && /root/send-fio/bin/spacevm-perf-fio-send
+			/usr/local/bin/spacevm-perf-fio-fioloop -t ${i} && /usr/local/bin/spacevm-perf-fio-send
 		done
 	else
-		/usr/local/bin/spacevm-perf-fio-fioloop && /root/send-fio/bin/spacevm-perf-fio-send
+		/usr/local/bin/spacevm-perf-fio-fioloop && /usr/local/bin/spacevm-perf-fio-send
 	fi
 
 	return 0
