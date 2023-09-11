@@ -10,7 +10,8 @@ LICENSE=	BSD2CLAUSE
 LICENSE_FILE=	${WRKSRC}/LICENSE
 
 RUN_DEPENDS=	curl:ftp/curl \
-		fio:benchmarks/fio
+		fio:benchmarks/fio \
+		jq:textproc/jq
 
 #USES=		compiler:c++11-lang libedit pkgconfig:both
 USE_GITHUB=	yes
