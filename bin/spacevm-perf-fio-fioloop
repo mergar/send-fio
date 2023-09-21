@@ -261,7 +261,7 @@ else
 	FIO_RWMIXREAD="${FIO_AUTO_RWMIXREAD}"
 fi
 
-[ -z "{FIO_RWMIXREAD}" ] && FIO_RWMIXREAD="50"
+[ -z "${FIO_RWMIXREAD}" ] && FIO_RWMIXREAD="50"
 
 TYPE_UPPER=$( echo "${TYPE}" | ${TR_CMD} '[:lower:]' '[:upper:]' )
 
@@ -285,7 +285,7 @@ if [ -n "${MY_PARAMS}" ]; then
 		eval VAL="\$${TYPE_UPPER}_${i}"
 #		echo "X $VAL"
 		if [ -z "${VAL}" ]; then
-			${ECHO} "${W1_COLOR}Params empty: ${N2_COLOR}${i}${N0_COLOR}"
+			${ECHO} "${W1_COLOR}fioloop: params empty: ${N2_COLOR}${i}${N0_COLOR}"
 			exit 1
 		fi
 #		${SED_CMD} -i'' "s#%%i%%#${VAL}#g" /tmp/profile.conf.tpl
