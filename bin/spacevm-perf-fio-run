@@ -3,6 +3,55 @@
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
 
+usage()
+{
+	cat <<EOF
+Description:
+
+This is a set of scripts for testing I/O disk subsystem using the FIO utility. 
+The scripts have several profiles (easily extensible) and you can adjust some parameters. 
+The final result is printed on the screen and can be sent to an external resource.
+
+Can work both interactively and fully automatically (unattended mode).
+
+Options/Environments for unattended:
+
+FIO_AUTO_PROFILE - select profile for test (can be multiple, use ',' for delimer):
+  'randread'  - random READ;
+  'randrw'    - (mixed): random READ/WRITE(mixer). FIO_AUTO_RWMIXREAD can be used (default: 50);
+  'randwrite' - random WRITE;
+  'read'      - sequential READ;
+  'rw'        - (mixer): sequential READ/WRITE. FIO_AUTO_RWMIXREAD can be used (default: 50);
+  'write'     - sequential WRITE.
+FIO_AUTO_RWMIXREAD - balance between read and write, default: 50;
+                     FIO_AUTO_RWMIXREAD=30  would mean that 30% of the I/O will be READs and 70% will be WRITEs;
+FIO_AUTO_POST      - post statistic to external SpaceVM-perf service. FIO_CHECKIN_SERVER can be used:
+  '1' - to send statistics (by default);
+  '0' - to skip;
+FIO_CHECKIN_SERVER - override destination server for post statistics. Default: inherits ISO source site;
+FIO_AUTO_BS        - change 'fio' BS settings. Default: '4k';
+FIO_AUTO_DEPTH     - change 'fio' DEPTH settings;
+FIO_AUTO_JOBS      - change 'fio' JOBS settings;
+
+Example:
+
+env FIO_AUTO_POST=0 FIO_AUTO_PROFILE=read spacevm-perf-fio-run
+env FIO_AUTO_PROFILE=rw,randrw FIO_AUTO_RWMIXREAD=30 spacevm-perf-fio-run
+env CHECKIN_SERVER=https://perf.example.local spacevm-perf-fio-run
+
+EOF
+}
+
+while getopts "h" opt; do
+	case "${opt}" in
+		h)
+			usage
+			exit 0
+			;;
+	esac
+	shift $(($OPTIND - 1))
+done
+
 if [ -n "${DESTROY_DISK_DATA}" ]; then
 	DESTROY_DISK_DATA="${DESTROY_DISK_DATA}"
 else

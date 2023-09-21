@@ -203,13 +203,18 @@ fi
 
 # get from env first
 if [ -z "${FIO_AUTO_RWMIXREAD}" ]; then
-	# read from per-profile/custom?
-	_FIO_AUTO_RWMIXREAD=$( kenv mfsbsd.fio_auto_rwmixread 2>/dev/null )
-	ret=$?
+	if [ -n "${FIO_AUTO_PROFILE}" ]; then
+		# unattended
+		FIO_RWMIXREAD="${FIO_AUTO_RWMIXREAD}"
+	else
+		# read from per-profile/custom?
+		_FIO_AUTO_RWMIXREAD=$( kenv mfsbsd.fio_auto_rwmixread 2>/dev/null )
+		ret=$?
 
-	if [ ${ret} -eq 0 -a -n "${_FIO_AUTO_RWMIXREAD}" ]; then
-		FIO_RWMIXREAD="${_FIO_AUTO_RWMIXREAD}"
-		FIO_AUTO_RWMIXREAD="${_FIO_AUTO_RWMIXREAD}"
+		if [ ${ret} -eq 0 -a -n "${_FIO_AUTO_RWMIXREAD}" ]; then
+			FIO_RWMIXREAD="${_FIO_AUTO_RWMIXREAD}"
+			FIO_AUTO_RWMIXREAD="${_FIO_AUTO_RWMIXREAD}"
+		fi
 	fi
 else
 	FIO_RWMIXREAD="${FIO_AUTO_RWMIXREAD}"
@@ -218,37 +223,45 @@ fi
 [ -z "${FIO_RWMIXREAD}" ] && FIO_RWMIXREAD="50"
 
 # interactive
-if [ -z "${FIO_AUTO_RWMIXREAD}" ]; then
-	case "${PROFILE}" in
-		rw|randrw)
-			for i in 1 2 3; do
-				${ECHO} "${N1_COLOR}mixed workload is specified: ${N2_COLOR}${PROFILE}${N1_COLOR}"
-				${ECHO} "${N1_COLOR}Please adjust/confirm RWMIXREAD values (Default: ${N2_COLOR}${FIO_RWMIXREAD}${N1_COLOR})${N0_COLOR}"
-				${ECHO} "${N1_COLOR} (For example, --rwmixread=${N2_COLOR}30${N1_COLOR} would mean that ${N2_COLOR}30%${N1_COLOR} of the I/O will be reads and ${N2_COLOR}70%${N1_COLOR} will be writes${N0_COLOR}"
-				read _RWMIXREAD
-				if [ -z "${_RWMIXREAD}" ]; then
-					${ECHO} "${N1_COLOR}Confirmed: ${N2_COLOR}${FIO_RWMIXREAD}${N0_COLOR}"
-					break
-				fi
-				case "${_RWMIXREAD}" in
-					''|*[!0-9]*)
-						${ECHO} "${N1_COLOR}Wrong valued, please use 0-100 values${N0_COLOR}"
-						continue
-						;;
-					*)
-						if [ ${_RWMIXREAD} -gt 100 ]; then
+if [ -z "${FIO_AUTO_PROFILE}" ]; then
+	if [ -z "${FIO_AUTO_RWMIXREAD}" ]; then
+		case "${PROFILE}" in
+			rw|randrw)
+				for i in 1 2 3; do
+					${ECHO} "${N1_COLOR}mixed workload is specified: ${N2_COLOR}${PROFILE}${N1_COLOR}"
+					${ECHO} "${N1_COLOR}Please adjust/confirm RWMIXREAD values (Default: ${N2_COLOR}${FIO_RWMIXREAD}${N1_COLOR})${N0_COLOR}"
+					${ECHO} "${N1_COLOR} (For example, --rwmixread=${N2_COLOR}30${N1_COLOR} would mean that ${N2_COLOR}30%${N1_COLOR} of the I/O will be reads and ${N2_COLOR}70%${N1_COLOR} will be writes${N0_COLOR}"
+					read _RWMIXREAD
+					if [ -z "${_RWMIXREAD}" ]; then
+						${ECHO} "${N1_COLOR}Confirmed: ${N2_COLOR}${FIO_RWMIXREAD}${N0_COLOR}"
+						break
+					fi
+					case "${_RWMIXREAD}" in
+						''|*[!0-9]*)
 							${ECHO} "${N1_COLOR}Wrong valued, please use 0-100 values${N0_COLOR}"
 							continue
-						fi
-						${ECHO} "${N1_COLOR}Adjusted: ${N2_COLOR}${_RWMIXREAD}${N0_COLOR}"
-						FIO_RWMIXREAD="${_RWMIXREAD}"
-						break
-						;;
-				esac
-			done
-			;;
-	esac
+							;;
+						*)
+							if [ ${_RWMIXREAD} -gt 100 ]; then
+								${ECHO} "${N1_COLOR}Wrong valued, please use 0-100 values${N0_COLOR}"
+								continue
+							fi
+							${ECHO} "${N1_COLOR}Adjusted: ${N2_COLOR}${_RWMIXREAD}${N0_COLOR}"
+							FIO_RWMIXREAD="${_RWMIXREAD}"
+							break
+							;;
+					esac
+				done
+				;;
+		esac
+	else
+		FIO_RWMIXREAD="${FIO_AUTO_RWMIXREAD}"
+	fi
+else
+	FIO_RWMIXREAD="${FIO_AUTO_RWMIXREAD}"
 fi
+
+[ -z "{FIO_RWMIXREAD}" ] && FIO_RWMIXREAD="50"
 
 TYPE_UPPER=$( echo "${TYPE}" | ${TR_CMD} '[:lower:]' '[:upper:]' )
 
