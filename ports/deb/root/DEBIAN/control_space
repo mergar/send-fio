@@ -1,0 +1,14 @@
+Package: space-utils
+Version: %%VER%%-%%ENV%%
+Architecture: amd64
+Maintainer: space team <info@spacevm.org>
+Depends: bsdextrautils, coreutils, findutils, gnupg, grep, hostname, iproute2, locales, locales-all, mawk, mount, ntp, openssh-server, openssl, procps, puppet-agent, sed, sudo, systemd, tar, jq
+Provides: space-utils
+Conflicts: veil-utils (<<6.3.0),veil-utils-dev,veil-utils-stage
+Replaces: veil-utils, veil-utils-dev,veil-utils-stage
+Breaks: space-node-app (<< 6.0.0-2298)
+Section: devel
+Priority: extra
+Homepage: http://veil.mashtab.org
+Description: SpaceVM utils files.
+  (c) 2023 LLC «DACOM M»

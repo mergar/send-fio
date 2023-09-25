@@ -16,3 +16,6 @@ fio/tests.tgz
 .lesshst
 bin/spacevm-select-item
 ports/spacevm-sendfio/work
+ports/deb/root/etc
+ports/deb/root/usr
+
