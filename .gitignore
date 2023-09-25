@@ -18,4 +18,5 @@ bin/spacevm-select-item
 ports/spacevm-sendfio/work
 ports/deb/root/etc
 ports/deb/root/usr
+ports/deb/spacevm-sendfio_0.1_amd64.deb
 

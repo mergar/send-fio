@@ -1,0 +1,11 @@
+Package: spacevm-sendfio
+Version: 0.1
+Architecture: amd64
+Maintainer: space team <info@spacevm.org>
+Depends: jq, curl, fio
+Provides: spacevm-sendfio
+Section: devel
+Priority: extra
+Homepage: http://spacevm.ru
+Description: SpaceVM utils files.
+  (c) 2023 LLC «DACOM M»

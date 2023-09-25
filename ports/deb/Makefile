@@ -11,9 +11,9 @@ deb:
 	cp -a ../../share/fio-scripts root/usr/local/share/spacevm/
 	cp -a ../../share/fio-subr root/usr/local/share/spacevm/
 	cp -a ../../etc/spacevm-perf-fio.conf root/etc/spacevm-perf-fio.conf.sample
-	#dpkg-deb -b root .
+	dpkg-deb -b root .
 
 clean:
-	@rm -rf root/etc root/usr
+	@rm -rf root/etc root/usr *.deb
 
 .PHONY: deb
