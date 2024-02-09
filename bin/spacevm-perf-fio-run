@@ -2,6 +2,8 @@
 # Send FIO statistics to perf server
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
+MYARG=""
+MYOPTARG="DESTROY_DISK_DATA FIO_AUTO_BS FIO_AUTO_DEPTH FIO_AUTO_JOBS FIO_AUTO_POST FIO_AUTO_PROFILE FIO_AUTO_RWMIXREAD FIO_CHECKIN_SERVER OFFLINE_MODE XTRACE"
 
 usage()
 {
@@ -42,15 +44,13 @@ env CHECKIN_SERVER=https://perf.example.local spacevm-perf-fio-run
 EOF
 }
 
-while getopts "h" opt; do
-	case "${opt}" in
-		h)
-			usage
-			exit 0
-			;;
-	esac
-	shift $(($OPTIND - 1))
-done
+echo "OFFLINE_MODE $OFFLINE_MODE"
+
+set -e
+. /usr/local/share/spacevm/fio-subr/system.subr
+set +e
+
+echo "OFFLINE_MODE $OFFLINE_MODE"
 
 if [ -n "${DESTROY_DISK_DATA}" ]; then
 	DESTROY_DISK_DATA="${DESTROY_DISK_DATA}"
@@ -64,72 +64,9 @@ CBSD_PERF_DISTRO=0
 # options
 #
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
-CURR_VERSION="0.1"
+CURR_VERSION="0.2"
 USE_TOR=NO
 DO_LOG_NET_TRAFFIC=1
-
-set -e
-. /usr/local/etc/spacevm-perf-fio.conf
-. /usr/local/share/spacevm/fio-subr/SpaceVM.subr
-. /usr/local/share/spacevm/fio-subr/color.subr
-. /usr/local/share/spacevm/fio-subr/system.subr
-. /usr/local/share/spacevm/fio-subr/network.subr
-set +e
-
-# main loop. can be overriden via subr/${OPSYS}.subr
-fio_loop()
-{
-	local _auto_profile_env _auto_profile
-	local _ret _all_profiles
-
-	if [ -z "${FIO_AUTO_PROFILE}" ]; then
-		_auto_profile_env=$( kenv mfsbsd.fio_auto_profile 2>/dev/null )
-		_ret=$?
-	else
-		# get from env
-		_auto_profile_env="${FIO_AUTO_PROFILE}"
-		_ret=0
-	fi
-
-	# debug
-	if [ ${_ret} -eq 0 -a -n "${_auto_profile_env}" ]; then
-			case "${_auto_profile_env}" in
-				all)
-					echo "${CURL_CMD} -o /tmp/index.conf ${BENCH_INDEX_URL}"
-					${CURL_CMD} -s -o /tmp/index.conf ${BENCH_INDEX_URL} > /tmp/curl.$$ 2>&1
-					ret=$?
-
-					trap "${RM_CMD} -f /tmp/curl.$$" HUP INT ABRT BUS TERM EXIT
-
-					${CP_CMD} -a /tmp/curl.$$ /tmp/curl
-
-					if [ ${ret} -ne 0 ]; then
-						echo "curl error: ${ret}"
-						${CAT_CMD} /tmp/curl.$$
-						exit 1
-					else
-						echo "fetched config:"
-						${CAT_CMD} /tmp/index.conf
-						echo
-					fi
-					_all_profiles=$( ${CAT_CMD} /tmp/index.conf | ${CUT_CMD} -d : -f1 | ${TR_CMD} '\r\n' ' ' )
-					;;
-				*)
-					_all_profiles="${_auto_profile_env}"
-					;;
-			esac
-	fi
-
-	if [ -n "${_all_profiles}" ]; then
-		for i in ${_all_profiles}; do
-			/usr/local/bin/spacevm-perf-fio-fioloop -t ${i} && /usr/local/bin/spacevm-perf-fio-send
-		done
-	else
-		/usr/local/bin/spacevm-perf-fio-fioloop && /usr/local/bin/spacevm-perf-fio-send
-	fi
-
-	return 0
-}
 
 check_head_disk()
 {
@@ -149,7 +86,6 @@ check_head_disk()
 
 ## MAIN
 init_color
-
 ${ECHO} "${N1_COLOR}OS: ${N2_COLOR}${OS}${N0_COLOR}"
 ${ECHO} "${N1_COLOR}OPSYS: ${N2_COLOR}${OPSYS}${N0_COLOR}"
 
@@ -288,11 +224,14 @@ test_connection
 _ret=$?
 
 if [ ${_ret} -ne 0 ]; then
-	${ECHO} "${N1_COLOR}Connection failed, please try lates: ${N2_COLOR}${checkin_server}${N0_COLOR}"
-	exit 0
+	OFFLINE_MODE=1
+	${ECHO} "${N1_COLOR}Connection failed, offline mode: on: ${N2_COLOR}${checkin_server}${N0_COLOR}"
+	log "INIT" "Connected failed, offline mode: on:${checkin_server_description}"
+else
+	log "INIT" "Connected to ${checkin_server_description}"
 fi
 
-log "INIT" "Connected to ${checkin_server_description}"
+export OFFLINE_MODE="${OFFLINE_MODE}"
 
 if [ -r "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr" ]; then
 	. "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr"

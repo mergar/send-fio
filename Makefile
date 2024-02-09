@@ -13,14 +13,12 @@ INSTALL=install
 MKDIR=mkdir
 CFLAGS?= -static -O2
 
-#.SILENT:
-
 all: bin
 
 clean:
 	$(RM) -f bin/${BRAND}-select-item
 
-install: bin install_share
+install: bin install_share install_etc
 	${MKDIR} -p $(PREFIX)$(BINDIR)
 	${INSTALL} -m 0755 bin/${BRAND}-select-item $(PREFIX)/$(BINDIR)
 	${INSTALL} -m 0755 bin/${BRAND}-perf-fio-fioloop $(PREFIX)/$(BINDIR)
@@ -39,12 +37,18 @@ deinstall:
 		${PREFIX}/${SHARE_DIR}/${SCRIPT_SHARE_DIR}/fio-scripts \
 		${PREFIX}/${SHARE_DIR}/${SCRIPT_SHARE_DIR}/fio-subr
 	@${RMDIR} ${PREFIX}/${SHARE_DIR}/${SCRIPT_SHARE_DIR} || true
+	${RM} -f ${PREFIX}/etc/send-fio/*.conf.sample
+	@${RMDIR} -f ${PREFIX}/etc/send-fio
 
 ${BRAND}-select-item:
 	${CC} -o bin/${BRAND}-select-item $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LIBS) src/${BRAND}-select-item.c
 
 bin: ${BRAND}-select-item
 	${STRIP} bin/${BRAND}-select-item
+
+install_etc:
+	${INSTALL} -d ${PREFIX}/etc
+	${CP} -a etc/send-fio ${PREFIX}/etc/
 
 install_share:
 	${INSTALL} -d ${PREFIX}/${SHARE_DIR}

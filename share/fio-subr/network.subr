@@ -291,6 +291,7 @@ parse_http_proxy_string()
 test_connection()
 {
 	local _body _ret
+	[ "${XTRACE}" = "1" ] && set -o xtrace
 
 	_body=$( do_http_request "HEAD" "/" "" "" 0 )
 	_ret=$?
@@ -299,6 +300,7 @@ test_connection()
 		log "FAIL" "Unable to connect to ${checkin_server_description}"
 		fail "Network or host is down?"
 	fi
+	set +o xtrace
 }
 
 setup_proxies() {
@@ -328,6 +330,8 @@ setup_proxies() {
 
 get_id_token()
 {
+	[ "${XTRACE}" = "1" ] && set -o xtrace
+
 	if [ -f ${id_token_file} ]; then
 		if [ $( ${WC_CMD} -l < ${id_token_file} ) -lt 3 ]; then
 			${RM_CMD} -f ${id_token_file}
@@ -380,6 +384,8 @@ get_id_token()
 	. ${id_token_file}
 	KEY=$( uri_escape ${KEY} )
 	TOKEN=$( uri_escape ${TOKEN} )
+
+	set +o xtrace
 
 	return 0
 }

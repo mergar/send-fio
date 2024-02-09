@@ -2,23 +2,122 @@ if [ ! "$_SYSTEM_SUBR" ]; then
 _SYSTEM_SUBR=1
 ###
 
-conv2human()
-{
-	local lhal="B"
-	local tmpmem="$1"
-	local lval
-
-	human_val=""
-
-	for hval in "Kb" "Mb" "Gb" "Tb"; do
-		mem=$(( tmpmem / 1024 ))
-		[ "${mem}" = "0" ] && break
-		tmpmem=${mem}
-		lval="${hval}"
-	done
-
-	human_val="${tmpmem} ${lval}"
+# fatal error. Print message to stdout then quit with exitval
+err() {
+	exitval=$1
+	shift
+	echo "$*" 1>&2
+	exit ${exitval}
 }
+
+# check for function existance
+fn_exists()
+{
+	# 'grep' before macros here
+	LC_ALL=C type ${1} | grep -q 'shell function'
+}
+
+# usage
+case "${1}" in
+	-h|--help|help)
+		echo "${0}: ${DESC}"
+		echo "mandatory: ${MYARG}"
+		echo "optional: ${MYOPTARG}"
+
+		if fn_exists usage 2>/dev/null; then
+			usage
+		fi
+		exit 0
+		;;
+esac
+
+
+# init/bootstrap handler: validate/init params/environments
+for i in ${MYARG}; do
+	eval T="\$$i"
+	[ -z "${T}" ] && continue
+	# store/push environment vars in o${PARAM}
+	export o${i}="${T}"
+done
+
+for i in ${MYOPTARG}; do
+	eval T="\$$i"
+	[ -z "${T}" ] && continue
+	# store/push environment vars in o${PARAM}
+	export o${i}="${T}"
+done
+
+# read global config
+for i in spacevm-perf-fio.conf.sample spacevm-perf-fio.conf; do
+	[ -r /usr/local/etc/send-fio/${i} ] && . /usr/local/etc/send-fio/${i}
+done
+
+# read script-specific (per-command) vars
+for i in ${pgm}.conf.sample ${pgm}.conf; do
+	[ -r /usr/local/etc/send-fio/${i} ] && . /usr/local/etc/send-fio/${i}
+done
+
+# 'uname' before macros here
+OS=$( uname -s )
+
+case "${OS}" in
+	Linux)
+		ECHO="echo"
+		id_token_file='/var/run/send-perf-stats'
+		MAIN_CMD="${MAIN_CMD} lsblk"
+		# Linux require -i'', not -i ' '
+		sed_delimer=
+		;;
+	FreeBSD)
+		ECHO="echo -e"
+		id_token_file='/var/db/send-perf-stats'
+		MAIN_CMD="${MAIN_CMD} camcontrol diskinfo"
+		sed_delimer=" "
+		;;
+esac
+
+if [ -r /etc/os-release ]; then
+	NAME=
+	PRETTY_NAME=
+	. /etc/os-release
+	if [ -n "${NAME}" ]; then
+		OPSYS="${NAME}"
+	elif [ -n "${PRETTY_NAME}" ]; then
+		OPSYS="${PRETTY_NAME}"
+	else
+		OPSYS="${OS}"
+	fi
+fi
+
+set -e
+. /usr/local/share/spacevm/fio-subr/color.subr
+. /usr/local/share/spacevm/fio-subr/system.subr
+. /usr/local/share/spacevm/fio-subr/network.subr
+set +e
+
+if [ -r /usr/local/share/spacevm/fio-subr/${OPSYS}.subr ]; then
+	echo "Info: OS-specific subr found: ${OPSYS}.subr" 1>&2
+	. /usr/local/share/spacevm/fio-subr/${OPSYS}.subr
+fi
+
+for i in ${MYARG}; do
+	# check for environment vars and pop/restore
+	eval T="\$o${i}"
+	if [ -n "${T}" ]; then
+		export $i="${T}"
+	else
+		eval T="\$$i"
+	fi
+	[ -z "${T}" ] && err 1 "${pgm}: empty ${i}= variable, please use ${pgm}.conf"
+done
+
+# pop/restore optional options
+for i in ${MYOPTARG}; do
+	eval T="\$o$i"
+	[ -z "${T}" ] && continue
+	# store/push environment vars in o${PARAM}
+	export ${i}="${T}"
+done
 
 
 UNAME_CMD=$( which uname )
@@ -33,16 +132,6 @@ if [ ! -x "${TR_CMD}" ]; then
 	exit 1
 fi
 
-OS=$( ${UNAME_CMD} -s )
-
-case "${OS}" in
-	Linux)
-		ECHO="echo"
-		;;
-	FreeBSD)
-		ECHO="echo -e"
-		;;
-esac
 
 # generic mandatory tools/script
 MAIN_CMD="
@@ -80,21 +169,6 @@ wc
 whoami
 "
 
-case "${OS}" in
-	Linux)
-		id_token_file='/var/run/send-perf-stats'
-		MAIN_CMD="${MAIN_CMD} lsblk"
-		# Linux require -i'', not -i ' '
-		sed_delimer=
-		;;
-	FreeBSD)
-		id_token_file='/var/db/send-perf-stats'
-		MAIN_CMD="${MAIN_CMD} camcontrol diskinfo"
-		sed_delimer=" "
-		;;
-esac
-
-
 if [ "${USE_TOR}" = "YES" ]; then
 	MAIN_CMD="${MAIN_CMD} nc"
 fi
@@ -118,23 +192,11 @@ if [ "${MY_USER}" != "root" ]; then
 	exit 1
 fi
 
-if [ -r /etc/os-release ]; then
-	NAME=
-	PRETTY_NAME=
-	. /etc/os-release
-	if [ -n "${NAME}" ]; then
-		OPSYS="${NAME}"
-	elif [ -n "${PRETTY_NAME}" ]; then
-		OPSYS="${PRETTY_NAME}"
-	else
-		OPSYS="${OS}"
-	fi
-fi
-
 # return DSK_INFO (text/vendor info for /dev/$1 ) and BSIZE (size in bytes)
 dsk_info()
 {
 	local _dev="${1}"
+	[ "${XTRACE}" = "1" ] && set -o xtrace
 
 	DSK_INFO=
 	BSIZE=
@@ -163,6 +225,25 @@ dsk_info()
 
 	BSIZE=$( ${DISKINFO_CMD} /dev/${i} 2>/dev/null | ${AWK_CMD} '{printf $3}' )
 	[ -z "${BSIZE}" ] && BSIZE="0"
+	set + xtrace
+}
+
+conv2human()
+{
+	local lhal="B"
+	local tmpmem="$1"
+	local lval
+
+	human_val=""
+
+	for hval in "Kb" "Mb" "Gb" "Tb"; do
+		mem=$(( tmpmem / 1024 ))
+		[ "${mem}" = "0" ] && break
+		tmpmem=${mem}
+		lval="${hval}"
+	done
+
+	human_val="${tmpmem} ${lval}"
 }
 
 ###

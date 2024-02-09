@@ -1,8 +1,12 @@
 # global config file
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
 
+# Offline mode? When '0' - always try to use checkin_server to 
+# receive profiles and post results.
+OFFLINE_MODE=0
+
 # Primary server to fetch/upload jobs/result
-checkin_server="https://perf.spacevm.ru"
+checkin_server="http://perf.spacevm.ru"
 url="${checkin_server}"
 
 BENCH_CONF_URL="${checkin_server}/test.conf"
@@ -11,6 +15,9 @@ BENCH_INDEX_URL="${checkin_server}/fio/index.tests"
 CURR_VERSION="0.1"
 USE_TOR=NO
 DO_LOG_NET_TRAFFIC=1
+
+# CURL Opts
+CURL_OPT="--connect-timeout 8 --max-time 16 -L -s"
 
 send_stats_log="/var/log/send-perf-stats-log"
 checkin_server_description=${checkin_server}

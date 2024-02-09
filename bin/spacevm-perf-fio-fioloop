@@ -1,6 +1,8 @@
 #!/bin/sh
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
+MYARG=""
+MYOPTARG="DESTROY_DISK_DATA FIO_AUTO_BS FIO_AUTO_DEPTH FIO_AUTO_JOBS FIO_AUTO_POST FIO_AUTO_PROFILE FIO_AUTO_RWMIXREAD FIO_CHECKIN_SERVER OFFLINE_MODE XTRACE"
 
 alt_path=
 env_file=
@@ -17,11 +19,7 @@ while getopts "d:e:p:t:" opt; do
 done
 
 set -e
-. /usr/local/etc/spacevm-perf-fio.conf
-. /usr/local/share/spacevm/fio-subr/SpaceVM.subr
-. /usr/local/share/spacevm/fio-subr/color.subr
 . /usr/local/share/spacevm/fio-subr/system.subr
-. /usr/local/share/spacevm/fio-subr/network.subr
 set +e
 
 print_stats()
@@ -71,21 +69,24 @@ fi
 
 if [ -z "${AUTO_PROFILE}" -o "${AUTO_PROFILE}" = "manual" ]; then
 	# SYNC
-	echo "${CURL_CMD} -o /tmp/index.conf ${BENCH_INDEX_URL}"
-	${CURL_CMD} -s -o /tmp/index.conf ${BENCH_INDEX_URL} > /tmp/curl.$$ 2>&1
-	ret=$?
-
-	trap "${RM_CMD} -f /tmp/curl.$$" HUP INT ABRT BUS TERM EXIT
-
-	if [ ${ret} -ne 0 ]; then
-		echo "curl error: ${ret}"
-		${CAT_CMD} /tmp/curl.$$
-		exit 1
+	if [ ${OFFLINE_MODE} -eq 0 ]; then
+		echo "${CURL_CMD} -o /tmp/index.conf ${BENCH_INDEX_URL}"
+		${CURL_CMD} -s -o /tmp/index.conf ${BENCH_INDEX_URL} > /tmp/curl.$$ 2>&1
+		ret=$?
+		trap "${RM_CMD} -f /tmp/curl.$$" HUP INT ABRT BUS TERM EXIT
+		if [ ${ret} -ne 0 ]; then
+			echo "curl error: ${ret}"
+			${CAT_CMD} /tmp/curl.$$
+			exit 1
+		fi
 	else
-		echo "fetched config:"
-		cat /tmp/index.conf
-		echo
+		echo "info: use /usr/local/share/spacevm/fio/www/index.tests" 1>&2
+		${GREP_CMD} -v '^#' /usr/local/share/spacevm/fio/www/index.tests > /tmp/index.conf
 	fi
+
+	echo "fetched config:"
+	cat /tmp/index.conf
+	echo
 
 	_tmpdir=$( ${MKTEMP_CMD} -d )
 	_tmpfile=$( ${MKTEMP_CMD} )
