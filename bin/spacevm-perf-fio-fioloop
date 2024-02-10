@@ -70,23 +70,29 @@ fi
 if [ -z "${AUTO_PROFILE}" -o "${AUTO_PROFILE}" = "manual" ]; then
 	# SYNC
 	if [ ${OFFLINE_MODE} -eq 0 ]; then
-		echo "${CURL_CMD} -o /tmp/index.conf ${BENCH_INDEX_URL}"
-		${CURL_CMD} -s -o /tmp/index.conf ${BENCH_INDEX_URL} > /tmp/curl.$$ 2>&1
+		echo "${CURL_CMD} ${CURL_OPT} -o /tmp/index.conf ${BENCH_INDEX_URL}"
+		${CURL_CMD} ${CURL_OPT} -s -o /tmp/index.conf.$$ ${BENCH_INDEX_URL} > /tmp/curl.$$ 2>&1
 		ret=$?
-		trap "${RM_CMD} -f /tmp/curl.$$" HUP INT ABRT BUS TERM EXIT
+		trap "${RM_CMD} -f /tmp/curl.$$ /tmp/index.conf.$$" HUP INT ABRT BUS TERM EXIT
 		if [ ${ret} -ne 0 ]; then
 			echo "curl error: ${ret}"
 			${CAT_CMD} /tmp/curl.$$
 			exit 1
 		fi
+		${GREP_CMD} -v '^#' /tmp/index.conf.$$ > /tmp/index.conf
 	else
 		echo "info: use /usr/local/share/spacevm/fio/www/index.tests" 1>&2
 		${GREP_CMD} -v '^#' /usr/local/share/spacevm/fio/www/index.tests > /tmp/index.conf
 	fi
 
+	# check for "profile: desc" form in index
+	_test=$( ${HEAD_CMD} -n1 /tmp/index.conf | ${GREP_CMD} -q ':' 2>/dev/null )
+	_ret=$?
+
 	echo "fetched config:"
-	cat /tmp/index.conf
+	${CAT_CMD} /tmp/index.conf
 	echo
+	[ ${_ret} -ne 0 ] && err 1 "invalid config? needs 'profile: desc' form"
 
 	_tmpdir=$( ${MKTEMP_CMD} -d )
 	_tmpfile=$( ${MKTEMP_CMD} )
@@ -167,31 +173,47 @@ BENCH_DEFAULTS_CONFIG="${checkin_server}/${TYPE}/defaults.config"
 
 echo "TPL: ${BENCH_TPL}, CFG: ${BENCH_CONFIG}"
 
-${CURL_CMD} -s -o /tmp/defaults.config ${BENCH_DEFAULTS_CONFIG} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
-ret=$?
-if [ ${ret} -ne 0 ]; then
-	echo "curl error: ${ret}"
-	${CAT_CMD} /tmp/curl.$$
-	exit 1
+if [ ${OFFLINE_MODE} -eq 0 ]; then
+	${CURL_CMD} ${CURL_OPT} -o /tmp/defaults.config ${BENCH_DEFAULTS_CONFIG} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
+	ret=$?
+	if [ ${ret} -ne 0 ]; then
+		echo "curl error: ${ret}"
+		${CAT_CMD} /tmp/curl.$$
+		exit 1
+	fi
+else
+	${CP_CMD} -a /usr/local/share/spacevm/fio/www/defaults.config /tmp/defaults.config
+	ret=$?
 fi
+
 ${RM_CMD} /tmp/curl.$$
 [ -r /tmp/defaults.config ] && . /tmp/defaults.config
 
 # per-template extra/custom
-${CURL_CMD} -s -o /tmp/${PROFILE}.config ${BENCH_CONFIG} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
-ret=$?
-if [ ${ret} -eq 0 ]; then
-	${RM_CMD} /tmp/curl.$$
+if [ ${OFFLINE_MODE} -eq 0 ]; then
+	${CURL_CMD} ${CURL_OPT} -o /tmp/${PROFILE}.config ${BENCH_CONFIG} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
+	ret=$?
+	if [ ${ret} -eq 0 ]; then
+		${RM_CMD} /tmp/curl.$$
+	fi
+else
+	${CP_CMD} -a /usr/local/share/spacevm/fio/www/${PROFILE}.config /tmp/defaults.config
+	ret=$?
 fi
 
 [ -r /tmp/${PROFILE}.config ] && . /tmp/defaults.config
 [ -r /tmp/profile.conf.tpl ] && ${RM_CMD} -f /tmp/profile.conf.tpl
-${CURL_CMD} -s -o /tmp/profile.conf.tpl ${BENCH_TPL} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
-ret=$?
-if [ ${ret} -ne 0 ]; then
-	echo "curl error: ${ret}"
-	${CAT_CMD} /tmp/curl.$$
-	exit 1
+if [ ${OFFLINE_MODE} -eq 0 ]; then
+	${CURL_CMD} ${CURL_OPT} -o /tmp/profile.conf.tpl ${BENCH_TPL} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
+	ret=$?
+	if [ ${ret} -ne 0 ]; then
+		echo "curl error: ${ret}"
+		${CAT_CMD} /tmp/curl.$$
+		exit 1
+	fi
+else
+	${CP_CMD} -a /usr/local/share/spacevm/fio/www/${PROFILE}.config /tmp/profile.conf.tpl
+	ret=$?
 fi
 
 ${RM_CMD} /tmp/curl.$$
