@@ -19,7 +19,7 @@ clean:
 	$(RM) -f bin/${BRAND}-select-item
 
 install: bin install_share install_etc
-	${MKDIR} -p $(PREFIX)$(BINDIR)
+	${MKDIR} -p $(PREFIX)/$(BINDIR)
 	${INSTALL} -m 0755 bin/${BRAND}-select-item $(PREFIX)/$(BINDIR)
 	${INSTALL} -m 0755 bin/${BRAND}-perf-fio-fioloop $(PREFIX)/$(BINDIR)
 	${INSTALL} -m 0755 bin/${BRAND}-perf-fio-run $(PREFIX)/$(BINDIR)
