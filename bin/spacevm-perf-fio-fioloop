@@ -176,7 +176,7 @@ if [ ${OFFLINE_MODE} -eq 0 ]; then
 	_res=$( ${CURL_CMD} ${CURL_OPT} -o /tmp/defaults.config ${BENCH_DEFAULTS_CONFIG} 2>&1 )
 	ret=$?
 	if [ ${ret} -ne 0 ]; then
-		echo "curl error: ${ret}"
+		echo "a: curl fatal error: ${ret}"
 		err 1 "${_res}"
 	fi
 else
@@ -190,8 +190,8 @@ fi
 if [ ${OFFLINE_MODE} -eq 0 ]; then
 	_res=$( ${CURL_CMD} ${CURL_OPT} -o /tmp/${PROFILE}.config ${BENCH_CONFIG} 2>&1 )
 	ret=$?
-	if [ ${ret} -eq 0 ]; then
-		echo "curl error: ${ret}"
+	if [ ${ret} -ne 0 ]; then
+		echo "b: curl fatal error: ${ret}"
 		err 1 "${_res}"
 	fi
 else
@@ -205,8 +205,8 @@ fi
 if [ ${OFFLINE_MODE} -eq 0 ]; then
 	_res=$( ${CURL_CMD} ${CURL_OPT} -o /tmp/profile.conf.tpl ${BENCH_TPL} 2>&1 )
 	ret=$?
-	if [ ${ret} -eq 0 ]; then
-		echo "curl error: ${ret}"
+	if [ ${ret} -ne 0 ]; then
+		echo "c: curl fatal error: ${ret}"
 		err 1 "${_res}"
 	fi
 else
@@ -333,7 +333,9 @@ if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 			echo "Clean dir: ${FIO_DIRECTORY}"
 			${RM_CMD} -rf "${FIO_DIRECTORY}"
 		else
-			echo "no such dir for clean?: ${FIO_DIRECTORY}"
+			# not for raw
+			true
+			#echo "no such dir for clean?: ${FIO_DIRECTORY}"
 		fi
 	fi
 fi
@@ -411,7 +413,9 @@ if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 			echo "Clean dir: ${FIO_DIRECTORY}"
 			${RM_CMD} -rf "${FIO_DIRECTORY}"
 		else
-			echo "no such dir for clean?: ${FIO_DIRECTORY}"
+			# not for raw
+			#echo "no such dir for clean?: ${FIO_DIRECTORY}"
+			true
 		fi
 	fi
 fi

@@ -95,7 +95,9 @@ select_disks()
 	local _tmpdir=
 	local _tmpfile=
 
-	DISK_LIST=$( for i in ${_kern_disks}; do
+	MDISK_LIST=$( ${FIND_CMD} /dev -name md\[0-9\] -exec ${BASENAME_CMD} {} \; )
+
+	DISK_LIST=$( for i in ${_kern_disks} ${MDISK_LIST}; do
 		case "${i}" in
 			acd[0-9]*|cd[0-9]*|scd[0-9]*) continue ;;
 		esac
