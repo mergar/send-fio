@@ -95,7 +95,9 @@ select_disks()
 	local _tmpdir=
 	local _tmpfile=
 
-	MDISK_LIST=$( ${FIND_CMD} /dev -name md\[0-9\] -exec ${BASENAME_CMD} {} \; )
+	# scan for memory disk?
+	MDISK_LIST=
+	#MDISK_LIST=$( ${FIND_CMD} /dev -name md\[0-9\] -exec ${BASENAME_CMD} {} \; )
 
 	DISK_LIST=$( for i in ${_kern_disks} ${MDISK_LIST}; do
 		case "${i}" in

@@ -2,6 +2,8 @@ if [ ! "$_SYSTEM_SUBR" ]; then
 _SYSTEM_SUBR=1
 ###
 
+export LANG=en_US.UTF-8
+
 # fatal error. Print message to stdout then quit with exitval
 err() {
 	exitval=$1

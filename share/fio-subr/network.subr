@@ -482,7 +482,13 @@ bench_type="${TYPE}"
 EOF
 
 	cd  /tmp/spacevm-perf-fio
-	${TAR_CMD} cfz tests.tgz tests
+	_res=$( ${TAR_CMD} cfz tests.tgz tests 2>&1 )
+	_ret=$?
+
+	if [ ${_ret} -ne 0 ]; then
+		echo "tar failed, errcode: ${_ret}"
+		err ${_ret} "${_res}"
+	fi
 
 	data=$( ${REALPATH_CMD} ./tests.tgz )
 
