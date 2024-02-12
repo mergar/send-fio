@@ -61,7 +61,7 @@ done
 OS=$( uname -s )
 
 case "${OS}" in
-	Linux)
+	Linux|SpaceVM)
 		ECHO="echo"
 		id_token_file='/var/run/send-perf-stats'
 		# Linux require -i'', not -i ' '

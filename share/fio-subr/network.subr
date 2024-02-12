@@ -412,7 +412,7 @@ report_system()
 	local is_virtual= _jailed=
 
 	case "${OS}" in
-		FreeBSD)
+		FreeBSD|Liman)
 			local line=$(${SYSCTL_CMD} -n hw.model)
 			local VEN=$(echo $line | ${CUT_CMD} -d ' ' -f 1)
 			#local DEV=$(uri_escape $(echo $line | ${CUT_CMD} -d ' ' -f 2-))
@@ -436,7 +436,7 @@ report_system()
 			_jailed=$( ${SYSCTL_CMD} -n security.jail.jailed )
 			[ "${_jailed}" = "1" ] && is_virtual="jail"
 			;;
-		Linux)
+		Linux|SpaceVM)
 			is_virtual=$( systemd-detect-virt | ${TR_CMD} '[:lower:]' '[:upper:]' )
 			local line=$( ${GREP_CMD} "^model name" /proc/cpuinfo | ${HEAD_CMD} -n1 | ${CUT_CMD} -d ':' -f 2 )
 			local VEN=$( echo ${line} | ${AWK_CMD} '{printf $1}' )
@@ -457,6 +457,11 @@ report_system()
 		else
 			OPSYS="${OS}"
 		fi
+	fi
+
+	if [ -r /etc/rc.conf ]; then
+		. /etc/rc.conf
+		[ -n "${CBSD_PERF_DISTRO}" ] && OPSYS="Liman"
 	fi
 
 #	OPSYS=$( uri_escape $( echo "${OPSYS}" ) )
