@@ -296,9 +296,9 @@ test_connection()
 	_body=$( do_http_request "HEAD" "/" "" "" 0 )
 	_ret=$?
 
-	if [ ${_ret} -ne 0 -a ${_ret} -ne 2 ]; then
+	if [ ${_ret} -ne 0 ]; then
 		log "FAIL" "Unable to connect to ${checkin_server_description}"
-		fail "Network or host is down?"
+		return ${_ret}
 	fi
 	set +o xtrace
 }
