@@ -1,5 +1,5 @@
 Package: spacevm-sendfio
-Version: 0.1
+Version: 0.2
 Architecture: amd64
 Maintainer: space team <info@spacevm.org>
 Depends: jq, curl, fio

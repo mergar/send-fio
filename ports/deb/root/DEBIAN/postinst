@@ -1,9 +1,6 @@
 #!/bin/sh
 case "$1" in
 	configure)
-		if [ ! -r /usr/local/etc/spacevm-perf-fio.conf ]; then
-			cp -a /usr/local/etc/spacevm-perf-fio.conf.sample /usr/local/etc/spacevm-perf-fio.conf
-		fi
 		exit 0
 		;;
 	abort-upgrade|abort-remove|abort-deconfigure)

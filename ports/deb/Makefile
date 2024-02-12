@@ -8,9 +8,10 @@ deb:
 	cc -o root/usr/local/bin/spacevm-select-item ../../src/spacevm-select-item.c
 	strip root/usr/local/bin/spacevm-select-item
 	cp -a ../../bin/* root/usr/local/bin/
+	cp -a ../../share/fio root/usr/local/share/spacevm/
 	cp -a ../../share/fio-scripts root/usr/local/share/spacevm/
 	cp -a ../../share/fio-subr root/usr/local/share/spacevm/
-	cp -a ../../etc/spacevm-perf-fio.conf root/usr/local/etc/spacevm-perf-fio.conf.sample
+	cp -a ../../etc/send-fio root/usr/local/etc/
 	dpkg-deb -b root .
 
 clean:

@@ -1,1 +1,0 @@
-fs:local,pool:/storages/local/tmp,inuse:92%
