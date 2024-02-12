@@ -71,13 +71,12 @@ if [ -z "${AUTO_PROFILE}" -o "${AUTO_PROFILE}" = "manual" ]; then
 	# SYNC
 	if [ ${OFFLINE_MODE} -eq 0 ]; then
 		echo "${CURL_CMD} ${CURL_OPT} -o /tmp/index.conf ${BENCH_INDEX_URL}"
-		${CURL_CMD} ${CURL_OPT} -s -o /tmp/index.conf.$$ ${BENCH_INDEX_URL} > /tmp/curl.$$ 2>&1
+		_res=$( ${CURL_CMD} ${CURL_OPT} -s -o /tmp/index.conf.$$ ${BENCH_INDEX_URL} 2>&1 )
 		ret=$?
-		trap "${RM_CMD} -f /tmp/curl.$$ /tmp/index.conf.$$" HUP INT ABRT BUS TERM EXIT
+		trap "${RM_CMD} -f /tmp/index.conf.$$" HUP INT ABRT BUS TERM EXIT
 		if [ ${ret} -ne 0 ]; then
 			echo "curl error: ${ret}"
-			${CAT_CMD} /tmp/curl.$$
-			exit 1
+			err 1 "${_res}"
 		fi
 		${GREP_CMD} -v '^#' /tmp/index.conf.$$ > /tmp/index.conf
 	else
@@ -171,30 +170,29 @@ BENCH_TPL="${checkin_server}/${TYPE}/${PROFILE}.fio"
 BENCH_CONFIG="${checkin_server}/${TYPE}/${PROFILE}.config"
 BENCH_DEFAULTS_CONFIG="${checkin_server}/${TYPE}/defaults.config"
 
-echo "TPL: ${BENCH_TPL}, CFG: ${BENCH_CONFIG}"
+echo "TPL2: ${BENCH_TPL}, CFG: ${BENCH_CONFIG}, OFFLINE: ${OFFLINE_MODE}"
 
 if [ ${OFFLINE_MODE} -eq 0 ]; then
-	${CURL_CMD} ${CURL_OPT} -o /tmp/defaults.config ${BENCH_DEFAULTS_CONFIG} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
+	_res=$( ${CURL_CMD} ${CURL_OPT} -o /tmp/defaults.config ${BENCH_DEFAULTS_CONFIG} 2>&1 )
 	ret=$?
 	if [ ${ret} -ne 0 ]; then
 		echo "curl error: ${ret}"
-		${CAT_CMD} /tmp/curl.$$
-		exit 1
+		err 1 "${_res}"
 	fi
 else
 	${CP_CMD} -a /usr/local/share/spacevm/fio/www/defaults.config /tmp/defaults.config
 	ret=$?
 fi
 
-${RM_CMD} /tmp/curl.$$
 [ -r /tmp/defaults.config ] && . /tmp/defaults.config
 
 # per-template extra/custom
 if [ ${OFFLINE_MODE} -eq 0 ]; then
-	${CURL_CMD} ${CURL_OPT} -o /tmp/${PROFILE}.config ${BENCH_CONFIG} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
+	_res=$( ${CURL_CMD} ${CURL_OPT} -o /tmp/${PROFILE}.config ${BENCH_CONFIG} 2>&1 )
 	ret=$?
 	if [ ${ret} -eq 0 ]; then
-		${RM_CMD} /tmp/curl.$$
+		echo "curl error: ${ret}"
+		err 1 "${_res}"
 	fi
 else
 	${CP_CMD} -a /usr/local/share/spacevm/fio/www/${PROFILE}.config /tmp/defaults.config
@@ -203,20 +201,20 @@ fi
 
 [ -r /tmp/${PROFILE}.config ] && . /tmp/defaults.config
 [ -r /tmp/profile.conf.tpl ] && ${RM_CMD} -f /tmp/profile.conf.tpl
+
 if [ ${OFFLINE_MODE} -eq 0 ]; then
-	${CURL_CMD} ${CURL_OPT} -o /tmp/profile.conf.tpl ${BENCH_TPL} 2>&1 | ${TEE_CMD} -a /tmp/curl.$$
+	_res=$( ${CURL_CMD} ${CURL_OPT} -o /tmp/profile.conf.tpl ${BENCH_TPL} 2>&1 )
 	ret=$?
-	if [ ${ret} -ne 0 ]; then
+	if [ ${ret} -eq 0 ]; then
 		echo "curl error: ${ret}"
-		${CAT_CMD} /tmp/curl.$$
-		exit 1
+		err 1 "${_res}"
 	fi
 else
-	${CP_CMD} -a /usr/local/share/spacevm/fio/www/${PROFILE}.config /tmp/profile.conf.tpl
+	echo "${CP_CMD} -a /usr/local/share/spacevm/fio/www/${PROFILE}.config /tmp/profile.conf.tpl"
+	${CP_CMD} -a /usr/local/share/spacevm/fio/www/${PROFILE}.fio /tmp/profile.conf.tpl
 	ret=$?
 fi
 
-${RM_CMD} /tmp/curl.$$
 ${GREP_CMD} -q "^rw=" /tmp/profile.conf.tpl
 ret=$?
 if [ ${ret} -ne 0 ]; then
@@ -294,7 +292,6 @@ eval MY_PARAMS="\$${TYPE_UPPER}_PARAMS"
 #FIO_DIRECTORY="/storages/local${FIO_DIRECTORY}"
 #FIO_DIRECTORY="/storages/zfs/z150_12${FIO_DIRECTORY}"
 #FIO_IOENGINE="libaio"
-
 echo $MY_PARAMS
 
 # overrides

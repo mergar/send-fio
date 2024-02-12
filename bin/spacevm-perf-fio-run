@@ -44,13 +44,9 @@ env CHECKIN_SERVER=https://perf.example.local spacevm-perf-fio-run
 EOF
 }
 
-echo "OFFLINE_MODE $OFFLINE_MODE"
-
 set -e
 . /usr/local/share/spacevm/fio-subr/system.subr
 set +e
-
-echo "OFFLINE_MODE $OFFLINE_MODE"
 
 if [ -n "${DESTROY_DISK_DATA}" ]; then
 	DESTROY_DISK_DATA="${DESTROY_DISK_DATA}"
@@ -217,18 +213,19 @@ fi
 # network setup
 setup_proxies
 
-${ECHO} "${N1_COLOR}Checkin server: ${N2_COLOR}${checkin_server}${N0_COLOR}"
-url="${checkin_server}"
+if [ "${OFFLINE_MODE}" = "0" ]; then
+	${ECHO} "${N1_COLOR}Checkin server: ${N2_COLOR}${checkin_server}${N0_COLOR}"
+	url="${checkin_server}"
+	test_connection
+	_ret=$?
 
-test_connection
-_ret=$?
-
-if [ ${_ret} -ne 0 ]; then
-	OFFLINE_MODE=1
-	${ECHO} "${N1_COLOR}Connection failed, offline mode: on: ${N2_COLOR}${checkin_server}${N0_COLOR}"
-	log "INIT" "Connected failed, offline mode: on:${checkin_server_description}"
-else
-	log "INIT" "Connected to ${checkin_server_description}"
+	if [ ${_ret} -ne 0 ]; then
+		OFFLINE_MODE=1
+		${ECHO} "${N1_COLOR}Connection failed, offline mode: on: ${N2_COLOR}${checkin_server}${N0_COLOR}"
+		log "INIT" "Connected failed, offline mode: on:${checkin_server_description}"
+	else
+		log "INIT" "Connected to ${checkin_server_description}"
+	fi
 fi
 
 export OFFLINE_MODE="${OFFLINE_MODE}"

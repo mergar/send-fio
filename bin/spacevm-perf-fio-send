@@ -2,18 +2,18 @@
 # Send FIO statistics to perf server
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
+MYARG=""
+MYOPTARG="FIO_AUTO_POST FIO_CHECKIN_SERVER OFFLINE_MODE XTRACE"
+
+set -e
+. /usr/local/share/spacevm/fio-subr/system.subr
+set +e
+
+[ "${OFFLINE_MODE}" = "1" ] && err 1 "${pgm}: skip reporting, offline mode"
 
 # env
 [ -z "${FIO_AUTO_POST}" ] && FIO_AUTO_POST="1"
 [ "${FIO_AUTO_POST}" = "0" ] && exit 0
-
-set -e
-. /usr/local/etc/spacevm-perf-fio.conf
-. /usr/local/share/spacevm/fio-subr/SpaceVM.subr
-. /usr/local/share/spacevm/fio-subr/color.subr
-. /usr/local/share/spacevm/fio-subr/system.subr
-. /usr/local/share/spacevm/fio-subr/network.subr
-set +e
 
 #
 #data="/tmp/x5.tgz"
