@@ -2,7 +2,7 @@ Package: spacevm-sendfio
 Version: 0.4
 Architecture: amd64
 Maintainer: space team <info@spacevm.org>
-Depends: jq, curl, fio
+Depends: jq, curl, fio, binutils
 Provides: spacevm-sendfio
 Section: devel
 Priority: extra
