@@ -2,9 +2,25 @@ if [ ! "$_SPACEVM_SUBR" ]; then
 _SPACEVM_SUBR=1
 ###
 
+ZFS_POOL_LIST=
+
+exist()
+{
+	local _test="${1}"
+	local _i
+
+	for _i in ${ZFS_POOL_LIST}; do
+		[ "${_i}" = "${1}" ] && return 0
+	done
+
+	return 1
+}
+
 fio_loop()
 {
 	local _env_file=
+	local _pool_name=
+	local _p1
 
 	[ -r /tmp/run-fio-spacevm-volumes.conf ] && ${RM_CMD} -f /tmp/run-fio-spacevm-volumes.conf
 	trap "${RM_CMD} -f /tmp/run-fio-spacevm-volumes.conf" HUP INT ABRT BUS TERM EXIT
@@ -12,10 +28,24 @@ fio_loop()
 		#echo "s:${_src} o:${_on} m:${_mnt} t:${_type} f:[${_fs}]"
 		# TODO: skip for local! see below
 		case "${_fs}" in
-			gfs2|zfs|ext4)
-			echo "found pool [${_fs}]: ${_mnt}"
-			echo "${_fs} ${_mnt}" >> /tmp/run-fio-spacevm-volumes.conf
-			;;
+			zfs)
+				_pool_name=$( zfs get -Ho value name ${_mnt} 2>/dev/null )
+				[ -z "${_pool_name}" ] && continue
+				_p1=${_pool_name%%/*}
+
+				if ! exist "${_p1}"; then
+					ZFS_POOL_LIST="${ZFS_POOL_LIST} ${_p1}"
+					echo "found pool [${_fs}]: ${_mnt} (parent: ${_p1})"
+				else
+					echo "found pool [${_fs}]: ${_mnt} (parent: ${_p1} (already queued, skipp))"
+					continue
+				fi
+				echo "${_fs} ${_mnt}" >> /tmp/run-fio-spacevm-volumes.conf
+				;;
+			*)
+				echo "found pool [${_fs}]: ${_mnt}"
+				echo "${_fs} ${_mnt}" >> /tmp/run-fio-spacevm-volumes.conf
+				;;
 		esac
 	done
 
