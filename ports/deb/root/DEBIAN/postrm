@@ -1,0 +1,4 @@
+#!/bin/sh
+
+[ -r /usr/local/etc/send-fio ] && rm -rf /usr/local/etc/send-fio
+exit 0
