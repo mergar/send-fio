@@ -3,13 +3,26 @@ _SPACEVM_SUBR=1
 ###
 
 ZFS_POOL_LIST=
+FILESYSTEM_LIST=
 
-exist()
+zpool_exist()
 {
 	local _test="${1}"
 	local _i
 
 	for _i in ${ZFS_POOL_LIST}; do
+		[ "${_i}" = "${1}" ] && return 0
+	done
+
+	return 1
+}
+
+filesystem_exist()
+{
+	local _test="${1}"
+	local _i
+
+	for _i in ${FILESYSTEM_LIST}; do
 		[ "${_i}" = "${1}" ] && return 0
 	done
 
@@ -32,8 +45,7 @@ fio_loop()
 				_pool_name=$( zfs get -Ho value name ${_mnt} 2>/dev/null )
 				[ -z "${_pool_name}" ] && continue
 				_p1=${_pool_name%%/*}
-
-				if ! exist "${_p1}"; then
+				if ! zpool_exist "${_p1}"; then
 					ZFS_POOL_LIST="${ZFS_POOL_LIST} ${_p1}"
 					echo "found pool [${_fs}]: ${_mnt} (parent: ${_p1})"
 				else
@@ -43,6 +55,16 @@ fio_loop()
 				echo "${_fs} ${_mnt}" >> /tmp/run-fio-spacevm-volumes.conf
 				;;
 			*)
+				_p1=$( df -h ${_mnt} | tail -n1 | awk '{printf $1}' )
+
+				if ! filesystem_exist "${_p1}"; then
+					FILESYSTEM_LIST="${FILESYSTEM_LIST} ${_p1}"
+					echo "found pool [${_fs}]: ${_mnt} (parent: ${_p1})"
+				else
+					echo "found pool [${_fs}]: ${_mnt} (parent: ${_p1} (already queued, skipp))"
+					continue
+				fi
+
 				echo "found pool [${_fs}]: ${_mnt}"
 				echo "${_fs} ${_mnt}" >> /tmp/run-fio-spacevm-volumes.conf
 				;;
@@ -54,7 +76,17 @@ fio_loop()
 		${FIND_CMD} /storages/local/ -maxdepth 1 -mindepth 1 -type d -exec ${BASENAME_CMD} {} \; | while read _pool_name; do
 			_mnt="/storages/local/${_pool_name}"
 			_fs="local"
-			echo "found local pool [${_fs}]: ${_mnt}"
+
+			_p1=$( df -h ${_mnt} | tail -n1 | awk '{printf $1}' )
+
+			if ! filesystem_exist "${_p1}"; then
+				FILESYSTEM_LIST="${FILESYSTEM_LIST} ${_p1}"
+				echo "found LOCAL pool [${_fs}]: ${_mnt} (parent: ${_p1})"
+			else
+				echo "found LOCAL pool [${_fs}]: ${_mnt} (parent: ${_p1} (already queued, skipp))"
+				continue
+			fi
+
 			echo "${_fs} ${_mnt}" >> /tmp/run-fio-spacevm-volumes.conf
 		done
 	fi
