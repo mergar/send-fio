@@ -25,3 +25,7 @@ nc_host=${checkin_server}
 nc_port=80
 http_header_proxy_auth=""
 timeout=10
+
+# skip any pools with the specified file systems, comma-separated when multiple, e.g.:
+#FILESYSTEM_TYPE_BLACKLIST="zfs ext4 gfs2"
+FILESYSTEM_TYPE_BLACKLIST=

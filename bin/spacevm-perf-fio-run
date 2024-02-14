@@ -3,7 +3,7 @@
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
 MYARG=""
-MYOPTARG="DESTROY_DISK_DATA FIO_AUTO_BS FIO_AUTO_DEPTH FIO_AUTO_JOBS FIO_AUTO_POST FIO_AUTO_PROFILE FIO_AUTO_RWMIXREAD FIO_CHECKIN_SERVER OFFLINE_MODE XTRACE"
+MYOPTARG="DESTROY_DISK_DATA FILESYSTEM_TYPE_BLACKLIST FIO_AUTO_BS FIO_AUTO_DEPTH FIO_AUTO_JOBS FIO_AUTO_POST FIO_AUTO_PROFILE FIO_AUTO_RWMIXREAD FIO_CHECKIN_SERVER OFFLINE_MODE XTRACE"
 
 usage()
 {
@@ -18,6 +18,8 @@ Can work both interactively and fully automatically (unattended mode).
 
 Options/Environments for unattended:
 
+FILESYSTEM_TYPE_BLACKLIST - skip any pools with the specified file systems, e.g.:
+                             FILESYSTEM_TYPE_BLACKLIST="gfs2 ext4 zfs";
 FIO_AUTO_PROFILE - select profile for test (can be multiple, use ',' for delimer):
   'randread'  - random READ;
   'randrw'    - (mixed): random READ/WRITE(mixer). FIO_AUTO_RWMIXREAD can be used (default: 50);

@@ -262,5 +262,17 @@ conv2human()
 	human_val="${tmpmem} ${lval}"
 }
 
+blacklist_type_exist()
+{
+	local _test="${1}"
+	local _i
+
+	for _i in ${FILESYSTEM_TYPE_BLACKLIST}; do
+		[ "${_i}" = "${1}" ] && return 0
+	done
+
+	return 1
+}
+
 ###
 fi

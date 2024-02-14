@@ -38,6 +38,12 @@ fio_loop()
 	[ -r /tmp/run-fio-spacevm-volumes.conf ] && ${RM_CMD} -f /tmp/run-fio-spacevm-volumes.conf
 	trap "${RM_CMD} -f /tmp/run-fio-spacevm-volumes.conf" HUP INT ABRT BUS TERM EXIT
 	${MOUNT_CMD} | ${GREP_CMD} "on /storages/" | while read _src _on _mnt _type _fs _nop; do
+
+		if blacklist_type_exist "${_fs}"; then
+			echo "found pool [${_fs}]: ${_mnt} (blacklisted type: [${_fs}], skipp)"
+			continue
+		fi
+
 		#echo "s:${_src} o:${_on} m:${_mnt} t:${_type} f:[${_fs}]"
 		# TODO: skip for local! see below
 		case "${_fs}" in
@@ -75,6 +81,14 @@ fio_loop()
 	if [ -d /storages/local ]; then
 		${FIND_CMD} /storages/local/ -maxdepth 1 -mindepth 1 -type d -exec ${BASENAME_CMD} {} \; | while read _pool_name; do
 			_mnt="/storages/local/${_pool_name}"
+
+			_p1=$( df -h ${_mnt} | tail -n1 | awk '{printf $1}' )
+			_fs=$( mount |grep "^${_p1} " | awk '{printf $5}' )
+			if blacklist_type_exist "${_fs}"; then
+				echo "found pool [${_fs}]: ${_mnt} (blacklisted type: [${_fs}], skipp)"
+				continue
+			fi
+
 			_fs="local"
 
 			_p1=$( df -h ${_mnt} | tail -n1 | awk '{printf $1}' )
@@ -97,7 +111,54 @@ fio_loop()
 	#z150_11 on /storages/zfs/z150_11 type zfs (rw,noatime,xattr,posixacl)
 	#/dev/mapper/3600143801259dcf30001000001640000 on /storages/gfs2/gfs2_3053831c type gfs2 (rw,noatime,nodiratime,debug,x-systemd.automount,_netdev)
 
+cp /tmp/run-fio-spacevm-volumes.conf /tmp/oke
 	if [ -r /tmp/run-fio-spacevm-volumes.conf ]; then
+
+		_tmpdir=$( ${MKTEMP_CMD} -d )
+		_tmpfile=$( ${MKTEMP_CMD} )
+		${ECHO} "${H3_COLOR}Description: scan ALL pools${N0_COLOR}" > ${_tmpdir}/ALL.descr
+		echo "0:ALL:" >> ${_tmpdir}/ALL.item
+
+		index=1
+		_def_method=$( ${CAT_CMD} /tmp/run-fio-spacevm-volumes.conf | ${SORT_CMD} -n | while read a b; do
+			_mnt=$( echo ${b} | tr '/' "_" )
+			[ ${index} -eq 1 ] && printf "${_mnt}"
+			${ECHO} "${H3_COLOR}Description: ${b}, type: [${a}]${N0_COLOR}" > ${_tmpdir}/${_mnt}.descr
+			echo "0:${_mnt}:" >> ${_tmpdir}/${_mnt}.item
+			echo "${b}" > ${_tmpdir}/${_mnt}.real
+			index=$(( index + 1 ))
+		done )
+
+		subject="Select pool to scan (${_def_method}):"
+		${ECHO} "${N1_COLOR}${subject}${N0_COLOR}"
+		/usr/local/bin/spacevm-select-item ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
+		_ret=$?
+
+		if [ ${_ret} -ne 0 ]; then
+			# break or cancel
+			choose="0"
+		fi
+
+		POOL=$( ${CAT_CMD} ${_tmpfile} )
+		echo "CHECK FOR ${_tmpdir}/${POOL}.real"
+		ls -la ${_tmpdir}/
+
+		${RM_CMD} ${_tmpfile} /tmp/index.conf 2>/dev/null
+
+		if [ -r "${_tmpdir}/${POOL}.real" ]; then
+			POOL=$( cat ${_tmpdir}/${POOL}.real )
+		fi
+
+		echo "X POOL: ${POOL}"
+		${RM_CMD} -rf ${_tmpdir}
+
+		[ -z "${POOL}" ] && exit 0
+		if [ "${POOL}" != "ALL" ]; then
+			${CP_CMD} -a /tmp/run-fio-spacevm-volumes.conf /tmp/run-fio-spacevm-volumes.conf.$$
+			${GREP_CMD} " ${POOL}" /tmp/run-fio-spacevm-volumes.conf.$$ > /tmp/run-fio-spacevm-volumes.conf
+			${RM_CMD} -f /tmp/run-fio-spacevm-volumes.conf.$$
+		fi
+
 		[ ! -d /tmp/spacevm-perf-fio/tests ] && ${MKDIR_CMD} -p /tmp/spacevm-perf-fio/tests
 
 		# pass environment file for AUTO_PROFILE

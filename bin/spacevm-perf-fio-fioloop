@@ -2,7 +2,7 @@
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
 MYARG=""
-MYOPTARG="DESTROY_DISK_DATA FIO_AUTO_BS FIO_AUTO_DEPTH FIO_AUTO_JOBS FIO_AUTO_POST FIO_AUTO_PROFILE FIO_AUTO_RWMIXREAD FIO_CHECKIN_SERVER OFFLINE_MODE XTRACE"
+MYOPTARG="DESTROY_DISK_DATA FILESYSTEM_TYPE_BLACKLIST FIO_AUTO_BS FIO_AUTO_DEPTH FIO_AUTO_JOBS FIO_AUTO_POST FIO_AUTO_PROFILE FIO_AUTO_RWMIXREAD FIO_CHECKIN_SERVER OFFLINE_MODE XTRACE"
 
 alt_path=
 env_file=
@@ -316,6 +316,7 @@ else
 	exit 1
 fi
 
+
 ${MV_CMD} /tmp/profile.conf.tpl /tmp/profile.fio
 echo "FIO_DIR: ${FIO_DIRECTORY}"
 [ -d /tmp/spacevm-perf-fio/tests ] && ${RM_CMD} -rf /tmp/spacevm-perf-fio/tests
@@ -340,6 +341,13 @@ if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 	fi
 fi
 ${MKDIR_CMD} -p "${FIO_DIRECTORY}"
+
+_p1=$( df -h ${FIO_DIRECTORY} | tail -n1 | awk '{printf $1}' )
+_fs=$( mount | grep "^${_p1} " | awk '{printf $5}' )
+if blacklist_type_exist "${_fs}"; then
+	echo "FIO_DIR (${FIO_DIRECTORY}) has pool type [${_fs}]: (blacklisted, skipp)"
+	exit 0
+fi
 
 CBSD_PERF_DISTRO=
 [ -r /etc/rc.conf ] && . /etc/rc.conf
