@@ -100,9 +100,9 @@ set -e
 . /usr/local/share/spacevm/fio-subr/network.subr
 set +e
 
-if [ -r /usr/local/share/spacevm/fio-subr/${OPSYS}.subr ]; then
+if [ -r "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr" ]; then
 	echo "Info: OS-specific subr found: ${OPSYS}.subr" 1>&2
-	. /usr/local/share/spacevm/fio-subr/${OPSYS}.subr
+	. "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr"
 else
 	. /usr/local/share/spacevm/fio-subr/GenericOS.subr
 fi
