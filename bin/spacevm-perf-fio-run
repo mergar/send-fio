@@ -87,6 +87,11 @@ init_color
 ${ECHO} "${N1_COLOR}OS: ${N2_COLOR}${OS}${N0_COLOR}"
 ${ECHO} "${N1_COLOR}OPSYS: ${N2_COLOR}${OPSYS}${N0_COLOR}"
 
+if [ -n "${1}" ]; then
+	[ ! -d "${1}" ] && err 1 "no such directory: ${1}"
+	ALT_PATH="-p ${1}"
+fi
+
 select_disks()
 {
 	local clean_disk_num=1
@@ -240,8 +245,17 @@ if [ -r "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr" ]; then
 	. "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr"
 fi
 
+SUMMARY_FILE=$( mktemp )
+${TRUNCATE_CMD} -s0 ${SUMMARY_FILE}
+SUMMARY_FILE_ARGS="-s ${SUMMARY_FILE}"
+
 fio_loop
 ret=$?
+
+echo "Summary"
+cat ${SUMMARY_FILE}
+
+rm -f ${SUMMARY_FILE}
 
 ${ECHO} "${N2_COLOR}Please type for re-run: ${N2_COLOR}/usr/local/bin/spacevm-perf-fio-run${N0_COLOR}"
 

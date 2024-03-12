@@ -178,7 +178,7 @@ cp /tmp/run-fio-spacevm-volumes.conf /tmp/oke
 		[ -r ${_env_file} ] && ${RM_CMD} -f ${_env_file}
 
 	else
-		/usr/local/bin/spacevm-perf-fio-fioloop </dev/tty && /usr/local/bin/spacevm-perf-fio-send
+		/usr/local/bin/spacevm-perf-fio-fioloop ${ALT_PATH}  </dev/tty && /usr/local/bin/spacevm-perf-fio-send
 		_ret=$?
 		return ${_ret}
 	fi
