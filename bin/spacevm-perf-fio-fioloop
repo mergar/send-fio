@@ -373,8 +373,28 @@ fi
 echo "${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json /tmp/profile.fio"
 
 # randread-iodepth-1-numjobs-2
-${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json /tmp/profile.fio
+${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp /tmp/profile.fio
 _ret=$?
+
+# skip potential errors in json:
+#fio: pid=299944, err=45/file:engines/posixaio.c:180, func=xfer, error=Operation not supported
+#fio: pid=299943, err=45/file:engines/posixaio.c:180, func=xfer, error=Operation not supported
+#fio: pid=299947, err=45/file:engines/posixaio.c:180, func=xfer, error=Operation not supported
+#fio: pid=299946, err=45/file:engines/posixaio.c:180, func=xfer, error=Operation not supported
+#fio: pid=299941, err=45/file:engines/posixaio.c:180, func=xfer, error=Operation not supported
+#fio: pid=299948, err=45/file:engines/posixaio.c:180, func=xfer, error=Operation not supported
+#fio: pid=299945, err=45/file:engines/posixaio.c:180, func=xfer, error=Operation not supported
+#fio: pid=299942, err=45/file:engines/posixaio.c:180, func=xfer, error=Operation not supported
+#{
+#  "fio version" : "fio-3.36",
+# ..
+grep ^fio: /tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp
+ret=$?
+if [ ${ret} -eq 0 ]; then
+	${GREP_CMD} -v ^fio: /tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp > /tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json
+else
+	${MV_CMD} /tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp /tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json
+fi
 
 #echo "/tmp/spacevm-perf-fio/tests/profile.txt
 
