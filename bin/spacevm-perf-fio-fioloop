@@ -7,12 +7,14 @@ MYOPTARG="DESTROY_DISK_DATA FILESYSTEM_TYPE_BLACKLIST FIO_AUTO_BS FIO_AUTO_DEPTH
 alt_path=
 env_file=
 run_test=
+summary_path=
 
-while getopts "d:e:p:t:" opt; do
+while getopts "d:e:p:s:t:" opt; do
 	case "${opt}" in
 		d) debug="${OPTARG}" ;;
 		e) env_file="${OPTARG}" ;;
 		p) alt_path="${OPTARG}" ;;
+		s) summary_file="${OPTARG}" ;;
 		t) run_test="${OPTARG}" ;;
 	esac
 	shift $(($OPTIND - 1))
@@ -26,6 +28,9 @@ print_stats()
 {
 	${ECHO} "${H2_COLOR}Read: ${R_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${R_KB}${N1_COLOR} KB/s )${N0_COLOR}"
 	${ECHO} "${H2_COLOR}Write: ${W_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${W_KB}${N1_COLOR} KB/s )${N0_COLOR}"
+	[ -z "${summary_file}" ] && return 0
+	echo "Profile: ${PROFILE}, Read: ${R_MB}, Write: ${W_MB}" >> ${summary_file}
+
 }
 
 
