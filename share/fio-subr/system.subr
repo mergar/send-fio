@@ -236,7 +236,16 @@ dsk_info()
 		if [ -n "${DSK_INFO}" ]; then
 			DSK_INFO=$( echo ${DSK_INFO} | ${TR_CMD} -d '<>' )
 		fi
-		[ -z "${DSK_INFO}" ] && DSK_INFO=" <Can't identify model>"
+		if [ -z "${DSK_INFO}" ]; then
+			case "${1}" in
+				vtbd*)
+					DSK_INFO="Virtio block storage"
+					;;
+				*)
+					DSK_INFO="<Can not identify model>"
+					;;
+			esac
+		fi
 	fi
 
 	BSIZE=$( ${DISKINFO_CMD} /dev/${i} 2>/dev/null | ${AWK_CMD} '{printf $3}' )
