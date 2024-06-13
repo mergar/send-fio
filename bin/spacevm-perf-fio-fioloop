@@ -305,6 +305,10 @@ if [ -n "${alt_path}" ]; then
 	FIO_DIRECTORY="${alt_path}"
 fi
 
+if [ -z "${FIO_DIRECT}" ]; then
+	FIO_DIRECT="0"
+fi
+
 if [ -n "${MY_PARAMS}" ]; then
 	for i in ${MY_PARAMS}; do
 		eval VAL="\$${TYPE_UPPER}_${i}"

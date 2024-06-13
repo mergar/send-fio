@@ -218,6 +218,9 @@ if [ "${CBSD_PERF_DISTRO}" = "1" ]; then
 	fi
 	echo "SELECTED ${SELECTED_DISK}"
 	sysrc -qf /etc/rc.conf FIO_SELECTED_DISK="${SELECTED_DISK}"
+	if [ -z "${DIRECT}" ]; then
+		sysrc -qf /etc/rc.conf DIRECT="1"
+	fi
 fi
 
 
