@@ -3,7 +3,7 @@
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
 MYARG=""
-MYOPTARG="DESTROY_DISK_DATA FILESYSTEM_TYPE_BLACKLIST FIO_AUTO_BS FIO_AUTO_DEPTH FIO_AUTO_JOBS FIO_AUTO_POST FIO_AUTO_PROFILE FIO_AUTO_RWMIXREAD FIO_CHECKIN_SERVER OFFLINE_MODE XTRACE"
+MYOPTARG="DESTROY_DISK_DATA FILESYSTEM_TYPE_BLACKLIST FIO_AUTO_BS FIO_AUTO_DEPTH FIO_AUTO_JOBS FIO_AUTO_POST FIO_AUTO_PROFILE FIO_AUTO_RUNTIME FIO_AUTO_RWMIXREAD FIO_CHECKIN_SERVER FIO_OFFLINE_MODE XTRACE"
 
 usage()
 {
@@ -17,6 +17,9 @@ The final result is printed on the screen and can be sent to an external resourc
 Can work both interactively and fully automatically (unattended mode).
 
 Options/Environments for unattended:
+
+FIO_OFFLINE_MODE   - do not receive FIO profiles from the checkin server;
+FIO_AUTO_POST  - do not post result to checkin server;
 
 FILESYSTEM_TYPE_BLACKLIST - skip any pools with the specified file systems, e.g.:
                              FILESYSTEM_TYPE_BLACKLIST="gfs2 ext4 zfs";
@@ -36,6 +39,7 @@ FIO_CHECKIN_SERVER - override destination server for post statistics. Default: i
 FIO_AUTO_BS        - change 'fio' BS settings. Default: '4k';
 FIO_AUTO_DEPTH     - change 'fio' DEPTH settings;
 FIO_AUTO_JOBS      - change 'fio' JOBS settings;
+FIO_AUTO_RUNTIME   - change 'fio' RUNTIME settings;
 
 Example:
 
@@ -218,23 +222,19 @@ if [ "${CBSD_PERF_DISTRO}" = "1" ]; then
 	fi
 	echo "SELECTED ${SELECTED_DISK}"
 	sysrc -qf /etc/rc.conf FIO_SELECTED_DISK="${SELECTED_DISK}"
-	if [ -z "${DIRECT}" ]; then
-		sysrc -qf /etc/rc.conf DIRECT="1"
-	fi
 fi
-
 
 # network setup
 setup_proxies
 
-if [ "${OFFLINE_MODE}" = "0" ]; then
+if [ "${FIO_OFFLINE_MODE}" = "0" ]; then
 	${ECHO} "${N1_COLOR}Checkin server: ${N2_COLOR}${checkin_server}${N0_COLOR}"
 	url="${checkin_server}"
 	test_connection
 	_ret=$?
 
 	if [ ${_ret} -ne 0 ]; then
-		OFFLINE_MODE=1
+		FIO_OFFLINE_MODE=1
 		${ECHO} "${N1_COLOR}Connection failed, offline mode: on: ${N2_COLOR}${checkin_server}${N0_COLOR}"
 		log "INIT" "Connected failed, offline mode: on:${checkin_server_description}"
 	else
@@ -242,7 +242,7 @@ if [ "${OFFLINE_MODE}" = "0" ]; then
 	fi
 fi
 
-export OFFLINE_MODE="${OFFLINE_MODE}"
+export FIO_OFFLINE_MODE="${FIO_OFFLINE_MODE}"
 
 if [ -r "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr" ]; then
 	. "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr"

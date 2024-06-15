@@ -15,6 +15,7 @@ fio/tests.tgz
 .selected_editor
 .lesshst
 bin/spacevm-select-item
+bin/spacevm-direct-supported
 ports/spacevm-sendfio/work
 ports/deb/root/usr
 ports/deb/*.deb

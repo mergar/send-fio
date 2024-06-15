@@ -3,13 +3,13 @@
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
 MYARG=""
-MYOPTARG="FIO_AUTO_POST FIO_CHECKIN_SERVER OFFLINE_MODE XTRACE"
+MYOPTARG="FIO_AUTO_POST FIO_CHECKIN_SERVER FIO_OFFLINE_MODE XTRACE"
 
 set -e
 . /usr/local/share/spacevm/fio-subr/system.subr
 set +e
 
-[ "${OFFLINE_MODE}" = "1" ] && err 1 "${pgm}: skip reporting, offline mode"
+[ "${FIO_OFFLINE_MODE}" = "1" ] && err 1 "${pgm}: skip reporting, offline mode"
 
 # env
 [ -z "${FIO_AUTO_POST}" ] && FIO_AUTO_POST="1"

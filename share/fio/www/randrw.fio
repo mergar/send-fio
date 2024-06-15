@@ -3,7 +3,7 @@
 group_reporting=1
 fallocate=0
 overwrite=0
-thread=1
+thread=%%THREAD%%
 rw=randrw
 time_based=1
 directory=%%DIRECTORY%%

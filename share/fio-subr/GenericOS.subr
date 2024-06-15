@@ -23,7 +23,7 @@ fio_loop()
 	if [ ${_ret} -eq 0 -a -n "${_auto_profile_env}" ]; then
 			case "${_auto_profile_env}" in
 				all)
-					if [ ${OFFLINE_MODE} -eq 0 ]; then
+					if [ ${FIO_OFFLINE_MODE} -eq 0 ]; then
 						echo "${CURL_CMD} ${CURL_OPT} -o /tmp/index.conf ${BENCH_INDEX_URL}"
 
 						${CURL_CMD} ${CURL_OPT} -o /tmp/index.conf.$$ ${BENCH_INDEX_URL} > /tmp/curl.$$ 2>&1

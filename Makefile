@@ -16,11 +16,12 @@ CFLAGS?= -static -O2
 all: bin
 
 clean:
-	$(RM) -f bin/${BRAND}-select-item
+	$(RM) -f bin/${BRAND}-select-item bin/${BRAND}-direct-supported
 
 install: bin install_share install_etc
 	${MKDIR} -p $(PREFIX)/$(BINDIR)
 	${INSTALL} -m 0755 bin/${BRAND}-select-item $(PREFIX)/$(BINDIR)
+	${INSTALL} -m 0755 bin/${BRAND}-direct-supported $(PREFIX)/$(BINDIR)
 	${INSTALL} -m 0755 bin/${BRAND}-perf-fio-fioloop $(PREFIX)/$(BINDIR)
 	${INSTALL} -m 0755 bin/${BRAND}-perf-fio-run $(PREFIX)/$(BINDIR)
 	${INSTALL} -m 0755 bin/${BRAND}-perf-fio-send $(PREFIX)/$(BINDIR)
@@ -29,6 +30,7 @@ deinstall:
 	${MKDIR} -p $(PREFIX)$(BINDIR)
 	${RM} -f \
 		${PREFIX}/${BINDIR}/${BRAND}-select-item \
+		${PREFIX}/${BINDIR}/${BRAND}-direct-supported \
 		$(PREFIX)/$(BINDIR)/${BRAND}-perf-fio-fioloop \
 		$(PREFIX)/$(BINDIR)/${BRAND}-perf-fio-run \
 		$(PREFIX)/$(BINDIR)/${BRAND}-perf-fio-send
@@ -38,13 +40,17 @@ deinstall:
 		${PREFIX}/${SHARE_DIR}/${SCRIPT_SHARE_DIR}/fio-subr
 	@${RMDIR} ${PREFIX}/${SHARE_DIR}/${SCRIPT_SHARE_DIR} || true
 	${RM} -f ${PREFIX}/etc/send-fio/*.conf.sample
-	@${RMDIR} -f ${PREFIX}/etc/send-fio
+	@${RMDIR} ${PREFIX}/etc/send-fio
 
 ${BRAND}-select-item:
 	${CC} -o bin/${BRAND}-select-item $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LIBS) src/${BRAND}-select-item.c
 
-bin: ${BRAND}-select-item
-	${STRIP} bin/${BRAND}-select-item
+${BRAND}-direct-supported:
+	${CC} -o bin/${BRAND}-direct-supported $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LIBS) src/direct-supported.c
+	${CC} -o bin/${BRAND}-select-item $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LIBS) src/${BRAND}-select-item.c
+
+bin: ${BRAND}-select-item ${BRAND}-direct-supported
+	${STRIP} bin/${BRAND}-select-item bin/${BRAND}-direct-supported
 
 install_etc:
 	${INSTALL} -d ${PREFIX}/etc

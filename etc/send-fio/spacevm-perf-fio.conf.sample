@@ -3,7 +3,7 @@ export PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
 
 # Offline mode? When '0' - always try to use checkin_server to 
 # receive profiles and post results.
-OFFLINE_MODE=0
+FIO_OFFLINE_MODE=0
 
 # Primary server to fetch/upload jobs/result
 checkin_server="http://perf.spacevm.ru"

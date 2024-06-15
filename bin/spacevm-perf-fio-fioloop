@@ -2,7 +2,7 @@
 pgm="${0##*/}"		# Program basename
 progdir="${0%/*}"	# Program directory
 MYARG=""
-MYOPTARG="DESTROY_DISK_DATA FILESYSTEM_TYPE_BLACKLIST FIO_AUTO_BS FIO_AUTO_DEPTH FIO_AUTO_JOBS FIO_AUTO_POST FIO_AUTO_PROFILE FIO_AUTO_RWMIXREAD FIO_CHECKIN_SERVER OFFLINE_MODE XTRACE"
+MYOPTARG="DESTROY_DISK_DATA FILESYSTEM_TYPE_BLACKLIST FIO_AUTO_BS FIO_AUTO_DEPTH FIO_AUTO_JOBS FIO_AUTO_POST FIO_AUTO_PROFILE FIO_AUTO_RUNTIME FIO_AUTO_RWMIXREAD FIO_CHECKIN_SERVER FIO_OFFLINE_MODE XTRACE"
 
 alt_path=
 env_file=
@@ -45,6 +45,7 @@ BS
 IOENGINE
 DIRECT
 NUMJOBS
+THREAD
 SIZE
 IODEPTH
 RWMIXREAD
@@ -74,7 +75,7 @@ fi
 
 if [ -z "${AUTO_PROFILE}" -o "${AUTO_PROFILE}" = "manual" ]; then
 	# SYNC
-	if [ ${OFFLINE_MODE} -eq 0 ]; then
+	if [ ${FIO_OFFLINE_MODE} -eq 0 ]; then
 		echo "${CURL_CMD} ${CURL_OPT} -o /tmp/index.conf ${BENCH_INDEX_URL}"
 		_res=$( ${CURL_CMD} ${CURL_OPT} -s -o /tmp/index.conf.$$ ${BENCH_INDEX_URL} 2>&1 )
 		ret=$?
@@ -175,9 +176,9 @@ BENCH_TPL="${checkin_server}/${TYPE}/${PROFILE}.fio"
 BENCH_CONFIG="${checkin_server}/${TYPE}/${PROFILE}.config"
 BENCH_DEFAULTS_CONFIG="${checkin_server}/${TYPE}/defaults.config"
 
-echo "TPL2: ${BENCH_TPL}, CFG: ${BENCH_CONFIG}, OFFLINE: ${OFFLINE_MODE}"
+echo "TPL2: ${BENCH_TPL}, CFG: ${BENCH_CONFIG}, OFFLINE: ${FIO_OFFLINE_MODE}"
 
-if [ ${OFFLINE_MODE} -eq 0 ]; then
+if [ ${FIO_OFFLINE_MODE} -eq 0 ]; then
 	_res=$( ${CURL_CMD} ${CURL_OPT} -o /tmp/defaults.config ${BENCH_DEFAULTS_CONFIG} 2>&1 )
 	ret=$?
 	if [ ${ret} -ne 0 ]; then
@@ -192,7 +193,7 @@ fi
 [ -r /tmp/defaults.config ] && . /tmp/defaults.config
 
 # per-template extra/custom
-if [ ${OFFLINE_MODE} -eq 0 ]; then
+if [ ${FIO_OFFLINE_MODE} -eq 0 ]; then
 	_res=$( ${CURL_CMD} ${CURL_OPT} -o /tmp/${PROFILE}.config ${BENCH_CONFIG} 2>&1 )
 	ret=$?
 	if [ ${ret} -ne 0 ]; then
@@ -207,7 +208,7 @@ fi
 [ -r /tmp/${PROFILE}.config ] && . /tmp/defaults.config
 [ -r /tmp/profile.conf.tpl ] && ${RM_CMD} -f /tmp/profile.conf.tpl
 
-if [ ${OFFLINE_MODE} -eq 0 ]; then
+if [ ${FIO_OFFLINE_MODE} -eq 0 ]; then
 	_res=$( ${CURL_CMD} ${CURL_OPT} -o /tmp/profile.conf.tpl ${BENCH_TPL} 2>&1 )
 	ret=$?
 	if [ ${ret} -ne 0 ]; then
@@ -248,50 +249,68 @@ fi
 
 [ -z "${FIO_RWMIXREAD}" ] && FIO_RWMIXREAD="50"
 
+TYPE_UPPER=$( echo "${TYPE}" | ${TR_CMD} '[:lower:]' '[:upper:]' )
+eval MY_PARAMS="\$${TYPE_UPPER}_PARAMS"
+
+# Other AUTO_ settings
+if [ -n "${MY_PARAMS}" ]; then
+	for i in ${MY_PARAMS}; do
+		eval VAL="\$AUTO_FIO_${i}"
+		if [ -n "${VAL}" ]; then
+			echo "environment override for: $i (${VAL})"
+			eval FIO_${i}="${VAL}"
+		fi
+	done
+else
+	${ECHO} "${W1_COLOR}No PARAMS vars${N0_COLOR}"
+	exit 1
+fi
+
+if [ -z "${FIO_THREAD}" ]; then
+	case "${OS}" in
+		FreeBSD|Liman)
+			FIO_THREAD=$( ${SYSCTL_CMD} -n hw.ncpu )
+			;;
+		Linux|SpaceVM)
+			local count=$( ${GREP_CMD} ^processor /proc/cpuinfo | ${WC_CMD} -l | ${AWK_CMD} '{printf $1}' )
+			;;
+	esac
+fi
+
 # interactive
-if [ -z "${FIO_AUTO_PROFILE}" ]; then
-	if [ -z "${FIO_AUTO_RWMIXREAD}" ]; then
-		case "${PROFILE}" in
-			rw|randrw)
-				for i in 1 2 3; do
-					${ECHO} "${N1_COLOR}mixed workload is specified: ${N2_COLOR}${PROFILE}${N1_COLOR}"
-					${ECHO} "${N1_COLOR}Please adjust/confirm RWMIXREAD values (Default: ${N2_COLOR}${FIO_RWMIXREAD}${N1_COLOR})${N0_COLOR}"
-					${ECHO} "${N1_COLOR} (For example, --rwmixread=${N2_COLOR}30${N1_COLOR} would mean that ${N2_COLOR}30%${N1_COLOR} of the I/O will be reads and ${N2_COLOR}70%${N1_COLOR} will be writes${N0_COLOR}"
-					read _RWMIXREAD
-					if [ -z "${_RWMIXREAD}" ]; then
-						${ECHO} "${N1_COLOR}Confirmed: ${N2_COLOR}${FIO_RWMIXREAD}${N0_COLOR}"
-						break
-					fi
-					case "${_RWMIXREAD}" in
-						''|*[!0-9]*)
+if [ -z "${FIO_AUTO_RWMIXREAD}" ]; then
+	case "${PROFILE}" in
+		rw|randrw)
+			for i in 1 2 3; do
+				${ECHO} "${N1_COLOR}mixed workload is specified: ${N2_COLOR}${PROFILE}${N1_COLOR}"
+				${ECHO} "${N1_COLOR}Please adjust/confirm RWMIXREAD values (Default: ${N2_COLOR}${FIO_RWMIXREAD}${N1_COLOR})${N0_COLOR}"
+				${ECHO} "${N1_COLOR} (For example, --rwmixread=${N2_COLOR}30${N1_COLOR} would mean that ${N2_COLOR}30%${N1_COLOR} of the I/O will be reads and ${N2_COLOR}70%${N1_COLOR} will be writes${N0_COLOR}"
+				read _RWMIXREAD
+				if [ -z "${_RWMIXREAD}" ]; then
+					${ECHO} "${N1_COLOR}Confirmed: ${N2_COLOR}${FIO_RWMIXREAD}${N0_COLOR}"
+					break
+				fi
+				case "${_RWMIXREAD}" in
+					''|*[!0-9]*)
+						${ECHO} "${N1_COLOR}Wrong valued, please use 0-100 values${N0_COLOR}"
+						continue
+						;;
+					*)
+						if [ ${_RWMIXREAD} -gt 100 ]; then
 							${ECHO} "${N1_COLOR}Wrong valued, please use 0-100 values${N0_COLOR}"
 							continue
-							;;
-						*)
-							if [ ${_RWMIXREAD} -gt 100 ]; then
-								${ECHO} "${N1_COLOR}Wrong valued, please use 0-100 values${N0_COLOR}"
-								continue
-							fi
-							${ECHO} "${N1_COLOR}Adjusted: ${N2_COLOR}${_RWMIXREAD}${N0_COLOR}"
-							FIO_RWMIXREAD="${_RWMIXREAD}"
-							break
-							;;
-					esac
-				done
-				;;
-		esac
-	else
-		FIO_RWMIXREAD="${FIO_AUTO_RWMIXREAD}"
-	fi
-else
-	FIO_RWMIXREAD="${FIO_AUTO_RWMIXREAD}"
+						fi
+						${ECHO} "${N1_COLOR}Adjusted: ${N2_COLOR}${_RWMIXREAD}${N0_COLOR}"
+						FIO_RWMIXREAD="${_RWMIXREAD}"
+						break
+						;;
+				esac
+			done
+		;;
+	esac
 fi
 
 [ -z "${FIO_RWMIXREAD}" ] && FIO_RWMIXREAD="50"
-
-TYPE_UPPER=$( echo "${TYPE}" | ${TR_CMD} '[:lower:]' '[:upper:]' )
-
-eval MY_PARAMS="\$${TYPE_UPPER}_PARAMS"
 
 # overrides
 #FIO_DIRECTORY="/storages/local${FIO_DIRECTORY}"
@@ -306,7 +325,14 @@ if [ -n "${alt_path}" ]; then
 fi
 
 if [ -z "${FIO_DIRECT}" ]; then
-	FIO_DIRECT="0"
+	printf "Auto-detect if O_DIRECT flags is supported ${FIO_DIRECTORY}: "
+	if /usr/local/bin/spacevm-direct-supported ${FIO_DIRECTORY}; then
+		echo "supported"
+		FIO_DIRECT="1"
+	else
+		echo "not supported"
+		FIO_DIRECT="0"
+	fi
 fi
 
 if [ -n "${MY_PARAMS}" ]; then
@@ -380,6 +406,8 @@ fi
 #IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
 #echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > /tmp/spacevm-perf-fio/tests/extra_info.txt
 echo "${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json /tmp/profile.fio"
+
+exit 0
 
 # randread-iodepth-1-numjobs-2
 ${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp /tmp/profile.fio
