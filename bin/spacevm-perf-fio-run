@@ -255,7 +255,8 @@ SUMMARY_FILE_ARGS="-s ${SUMMARY_FILE}"
 fio_loop
 ret=$?
 
-echo "Summary"
+echo
+echo "Summary:"
 ${CAT_CMD} ${SUMMARY_FILE}
 
 ${RM_CMD} -f ${SUMMARY_FILE}
