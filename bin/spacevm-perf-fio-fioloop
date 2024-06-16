@@ -444,6 +444,9 @@ echo "${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO
 ${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp /tmp/profile.fio
 _ret=$?
 
+echo "OK"
+read p
+
 # skip potential errors in json:
 #fio: pid=299944, err=45/file:engines/posixaio.c:180, func=xfer, error=Operation not supported
 #fio: pid=299943, err=45/file:engines/posixaio.c:180, func=xfer, error=Operation not supported
