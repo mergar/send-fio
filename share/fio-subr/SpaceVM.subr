@@ -171,14 +171,14 @@ cp /tmp/run-fio-spacevm-volumes.conf /tmp/oke
 			${CAT_CMD} /tmp/spacevm-perf-fio/tests/extra_info.txt
 			# Linux require </dev/tty ;-/
 			${ECHO} "${N1_COLOR}Pool: ${N2_COLOR}${_mnt}${N0_COLOR}"
-			/usr/local/bin/spacevm-perf-fio-fioloop -e ${_env_file} -p ${_mnt}/tmp/test </dev/tty && /usr/local/bin/spacevm-perf-fio-send
+			/usr/local/bin/spacevm-perf-fio-fioloop -e ${_env_file} -p ${_mnt}/tmp/test ${SUMMARY_FILE_ARGS} </dev/tty && /usr/local/bin/spacevm-perf-fio-send
 			${RM_CMD} -f /tmp/spacevm-perf-fio/tests/extra_info.txt
 		done
 
 		[ -r ${_env_file} ] && ${RM_CMD} -f ${_env_file}
 
 	else
-		/usr/local/bin/spacevm-perf-fio-fioloop ${ALT_PATH}  </dev/tty && /usr/local/bin/spacevm-perf-fio-send
+		/usr/local/bin/spacevm-perf-fio-fioloop ${ALT_PATH} ${SUMMARY_FILE_ARGS} </dev/tty && /usr/local/bin/spacevm-perf-fio-send
 		_ret=$?
 		return ${_ret}
 	fi

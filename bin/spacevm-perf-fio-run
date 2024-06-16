@@ -256,9 +256,9 @@ fio_loop
 ret=$?
 
 echo "Summary"
-cat ${SUMMARY_FILE}
+${CAT_CMD} ${SUMMARY_FILE}
 
-rm -f ${SUMMARY_FILE}
+${RM_CMD} -f ${SUMMARY_FILE}
 
 ${ECHO} "${N2_COLOR}Please type for re-run: ${N2_COLOR}/usr/local/bin/spacevm-perf-fio-run${N0_COLOR}"
 

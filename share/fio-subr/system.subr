@@ -152,6 +152,7 @@ cp
 curl
 cut
 dd
+df
 find
 fio
 grep

@@ -26,11 +26,11 @@ set +e
 
 print_stats()
 {
+	${ECHO} "${H1_COLOR}======== [${PROFILE}] [bs:${FIO_BS},depth:${FIO_DEPTH},jobs:${FIO_NUMJOBS},rwmixread:${FIO_RWMIXREAD}, FS: ${FS}] result ========:${N0_COLOR}"
 	${ECHO} "${H2_COLOR}Read: ${R_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${R_KB}${N1_COLOR} KB/s )${N0_COLOR}"
 	${ECHO} "${H2_COLOR}Write: ${W_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${W_KB}${N1_COLOR} KB/s )${N0_COLOR}"
 	[ -z "${summary_file}" ] && return 0
-	echo "Profile: ${PROFILE}, Read: ${R_MB}, Write: ${W_MB}" >> ${summary_file}
-
+	echo "profile: ${PROFILE}, fs: ${FS}, read: ${R_MB}, write: ${W_MB}" >> ${summary_file}
 }
 
 
@@ -255,7 +255,7 @@ eval MY_PARAMS="\$${TYPE_UPPER}_PARAMS"
 # Other AUTO_ settings
 if [ -n "${MY_PARAMS}" ]; then
 	for i in ${MY_PARAMS}; do
-		eval VAL="\$AUTO_FIO_${i}"
+		eval VAL="\$FIO_AUTO_${i}"
 		if [ -n "${VAL}" ]; then
 			echo "environment override for: $i (${VAL})"
 			eval FIO_${i}="${VAL}"
@@ -324,9 +324,21 @@ if [ -n "${alt_path}" ]; then
 	FIO_DIRECTORY="${alt_path}"
 fi
 
+echo "${FIO_DIRECTORY}" | ${GREP_CMD} -q "^/dev/"
+_ret=$?
+if [ ${_ret} -eq 0 ]; then
+	IS_RAW_DEVICE=1
+else
+	IS_RAW_DEVICE=0
+fi
+
+
 if [ -z "${FIO_DIRECT}" ]; then
 	printf "Auto-detect if O_DIRECT flags is supported ${FIO_DIRECTORY}: "
-	if /usr/local/bin/spacevm-direct-supported ${FIO_DIRECTORY}; then
+	if [ ${IS_RAW_DEVICE} -eq 0 ]; then
+		[ ! -d "${FIO_DIRECTORY}" ] && ${MKDIR_CMD} -p ${FIO_DIRECTORY}
+	fi
+	if /usr/local/bin/spacevm-direct-supported ${FIO_DIRECTORY} 2>/dev/null; then
 		echo "supported"
 		FIO_DIRECT="1"
 	else
@@ -377,11 +389,23 @@ if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 fi
 ${MKDIR_CMD} -p "${FIO_DIRECTORY}"
 
-_p1=$( df -h ${FIO_DIRECTORY} | tail -n1 | awk '{printf $1}' )
-_fs=$( mount | grep "^${_p1} " | awk '{printf $5}' )
-if blacklist_type_exist "${_fs}"; then
-	echo "FIO_DIR (${FIO_DIRECTORY}) has pool type [${_fs}]: (blacklisted, skipp)"
-	exit 0
+if [ ${IS_RAW_DEVICE} -ne 1 ]; then
+	_p1=$( ${DF_CMD} -h ${FIO_DIRECTORY} | ${TAIL_CMD} -n1 | ${AWK_CMD} '{printf $1}' )
+	case "${OS}" in
+		FreeBSD|Liman)
+			_fs=$( ${MOUNT_CMD} | ${GREP_CMD} "^${_p1} " | ${AWK_CMD} '{printf $4}' | ${TR_CMD} -d ',()' )
+			;;
+		Linux|SpaceVM)
+			_fs=$( ${MOUNT_CMD} | ${GREP_CMD} "^${_p1} " | ${AWK_CMD} '{printf $5}' | ${TR_CMD} -d ',()' )
+			;;
+	esac
+	if blacklist_type_exist "${_fs}"; then
+		echo "FIO_DIR (${FIO_DIRECTORY}) has pool type [${_fs}]: (blacklisted, skipp)"
+		exit 0
+	fi
+	FS="${_fs}"
+else
+	FS="raw"
 fi
 
 CBSD_PERF_DISTRO=
@@ -406,8 +430,6 @@ fi
 #IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
 #echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > /tmp/spacevm-perf-fio/tests/extra_info.txt
 echo "${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json /tmp/profile.fio"
-
-exit 0
 
 # randread-iodepth-1-numjobs-2
 ${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp /tmp/profile.fio
@@ -463,8 +485,8 @@ W_MB=$(( WRITE_BW_BYTES / 1024 / 1024 ))
 
 echo
 echo
-${ECHO} "${H1_COLOR}======== [${PROFILE}] [bs:${FIO_BS},depth:${FIO_DEPTH},jobs:${FIO_NUMJOBS},rwmixread:${FIO_RWMIXREAD}] result ========:${N0_COLOR}"
-print_stats | ${COLUMN_CMD} -t
+print_stats
+# | ${COLUMN_CMD} -t
 
 #printf "${N1_COLOR}Read: ${H2_COLOR}%-10s${N1_COLOR} MB/s ( ${H2_COLOR}%-16s${N1_COLOR} KB/s )${N0_COLOR}\n" ${R_MB} ${R_KB}
 # ${H2_COLOR}${R_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${R_KB}${N1_COLOR} KB/s )${N0_COLOR}"

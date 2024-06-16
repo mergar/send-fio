@@ -54,10 +54,10 @@ fio_loop()
 
 	if [ -n "${_all_profiles}" ]; then
 		for i in ${_all_profiles}; do
-			/usr/local/bin/spacevm-perf-fio-fioloop -t ${i} ${ALT_PATH} && /usr/local/bin/spacevm-perf-fio-send
+			/usr/local/bin/spacevm-perf-fio-fioloop -t ${i} ${ALT_PATH} ${SUMMARY_FILE_ARGS} && /usr/local/bin/spacevm-perf-fio-send
 		done
 	else
-		/usr/local/bin/spacevm-perf-fio-fioloop ${ALT_PATH} && /usr/local/bin/spacevm-perf-fio-send
+		/usr/local/bin/spacevm-perf-fio-fioloop ${ALT_PATH} ${SUMMARY_FILE_ARGS} && /usr/local/bin/spacevm-perf-fio-send
 	fi
 
 	set +o xtrace
