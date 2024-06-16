@@ -347,6 +347,15 @@ if [ -z "${FIO_DIRECT}" ]; then
 	fi
 fi
 
+if [ -z "${FIO_BS}" ]; then
+	printf "Auto-detect for BS ${FIO_DIRECTORY}: "
+	if [ ${IS_RAW_DEVICE} -eq 1 ]; then
+		FIO_BS="1m"
+	else
+		FIO_BS="4k"
+	fi
+	echo "${FIO_BS}"
+fi
 if [ -n "${MY_PARAMS}" ]; then
 	for i in ${MY_PARAMS}; do
 		eval VAL="\$${TYPE_UPPER}_${i}"
