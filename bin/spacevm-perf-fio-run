@@ -92,8 +92,15 @@ ${ECHO} "${N1_COLOR}OS: ${N2_COLOR}${OS}${N0_COLOR}"
 ${ECHO} "${N1_COLOR}OPSYS: ${N2_COLOR}${OPSYS}${N0_COLOR}"
 
 if [ -n "${1}" ]; then
-	[ ! -d "${1}" ] && err 1 "no such directory: ${1}"
-	ALT_PATH="-p ${1}"
+	if [ ! -d "${1}" ]; then
+		if [ -c "${1}" ]; then
+			FIO_SELECTED_DISK="${1}"
+		else
+			err 1 "no such directory: ${1}"
+		fi
+	else
+		ALT_PATH="-p ${1}"
+	fi
 fi
 
 select_disks()
@@ -213,17 +220,20 @@ select_disks()
 #	SELECTED_DISK="${_val}"
 }
 
-if [ "${CBSD_PERF_DISTRO}" = "1" ]; then
-	${ECHO} "${N1_COLOR}Disks found:${N0_COLOR}"
-	select_disks
-	if [ ! -e "${SELECTED_DISK}" ]; then
-		echo "no such ${SELECTED_DISK}"
-		exit 1
+if [ -z "${FIO_SELECTED_DISK}" ]; then
+	if [ "${CBSD_PERF_DISTRO}" = "1" ]; then
+		${ECHO} "${N1_COLOR}Disks found:${N0_COLOR}"
+		select_disks
+		if [ ! -e "${SELECTED_DISK}" ]; then
+			echo "no such ${SELECTED_DISK}"
+			exit 1
+		fi
+		echo "SELECTED ${SELECTED_DISK}"
+		sysrc -qf /etc/rc.conf FIO_SELECTED_DISK="${SELECTED_DISK}"
 	fi
-	echo "SELECTED ${SELECTED_DISK}"
-	sysrc -qf /etc/rc.conf FIO_SELECTED_DISK="${SELECTED_DISK}"
+else
+	sysrc -qf /etc/rc.conf FIO_SELECTED_DISK="${FIO_SELECTED_DISK}"
 fi
-
 # network setup
 setup_proxies
 

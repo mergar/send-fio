@@ -324,14 +324,15 @@ if [ -n "${alt_path}" ]; then
 	FIO_DIRECTORY="${alt_path}"
 fi
 
-echo "${FIO_DIRECTORY}" | ${GREP_CMD} -q "^/dev/"
-_ret=$?
-if [ ${_ret} -eq 0 ]; then
+
+CBSD_PERF_DISTRO=
+[ -r /etc/rc.conf ] && . /etc/rc.conf
+
+if [ -n "${FIO_SELECTED_DISK}" ]; then
 	IS_RAW_DEVICE=1
 else
 	IS_RAW_DEVICE=0
 fi
-
 
 if [ -z "${FIO_DIRECT}" ]; then
 	printf "Auto-detect if O_DIRECT flags is supported ${FIO_DIRECTORY}: "
@@ -417,8 +418,8 @@ else
 	FS="raw"
 fi
 
-CBSD_PERF_DISTRO=
-[ -r /etc/rc.conf ] && . /etc/rc.conf
+#CBSD_PERF_DISTRO=
+#[ -r /etc/rc.conf ] && . /etc/rc.conf
 if [ "${CBSD_PERF_DISTRO}" = "1" ]; then
 	${CP_CMD} -a /tmp/profile.fio /tmp/profile.bak
 	${GREP_CMD} -v directory /tmp/profile.bak > /tmp/profile.fio
@@ -443,9 +444,6 @@ echo "${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO
 # randread-iodepth-1-numjobs-2
 ${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp /tmp/profile.fio
 _ret=$?
-
-echo "OK"
-read p
 
 # skip potential errors in json:
 #fio: pid=299944, err=45/file:engines/posixaio.c:180, func=xfer, error=Operation not supported

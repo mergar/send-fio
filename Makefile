@@ -43,11 +43,11 @@ deinstall:
 	@${RMDIR} ${PREFIX}/etc/send-fio
 
 ${BRAND}-select-item:
-	${CC} -o bin/${BRAND}-select-item $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LIBS) src/${BRAND}-select-item.c
+	${CC} -o bin/${BRAND}-select-item src/${BRAND}-select-item.c
 
 ${BRAND}-direct-supported:
 	${CC} -o bin/${BRAND}-direct-supported $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LIBS) src/direct-supported.c
-	${CC} -o bin/${BRAND}-select-item $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LIBS) src/${BRAND}-select-item.c
+#	${CC} -o bin/${BRAND}-select-item $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $(LIBS) src/${BRAND}-select-item.c
 
 bin: ${BRAND}-select-item ${BRAND}-direct-supported
 	${STRIP} bin/${BRAND}-select-item bin/${BRAND}-direct-supported

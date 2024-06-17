@@ -1,0 +1,20 @@
+export DESTROY_DISK_DATA=1
+export FIO_OFFLINE_MODE=1
+export PERF_SPACEVM_SEND=0
+#export FIO_AUTO_PROFILE="read randread write randwrite rw randrw"
+#export FIO_AUTO_PROFILE="read write"
+#export FIO_AUTO_PROFILE="read"
+
+#export FIO_AUTO_SIZE="1g"
+export FIO_AUTO_RUNTIME=10
+#export FIO_AUTO_BS="1m"
+
+#export FIO_AUTO_RWMIXREAD=30
+export FIO_AUTO_RWMIXREAD=50
+
+# raw disk
+export FIO_DIRECTORY="/dev/nda0"
+spacevm-perf-fio-run
+
+# or custom dir:
+spacevm-perf-fio-run /tmp/my-mnt-pt
