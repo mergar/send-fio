@@ -267,7 +267,7 @@ ret=$?
 
 echo
 echo "Summary:"
-${CAT_CMD} ${SUMMARY_FILE}
+${CAT_CMD} ${SUMMARY_FILE} | ${COLUMN_CMD} -t -s ','
 
 ${RM_CMD} -f ${SUMMARY_FILE}
 

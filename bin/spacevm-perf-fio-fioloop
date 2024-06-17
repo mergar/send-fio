@@ -26,11 +26,13 @@ set +e
 
 print_stats()
 {
-	${ECHO} "${H1_COLOR}======== [${PROFILE}] [bs:${FIO_BS},depth:${FIO_DEPTH},jobs:${FIO_NUMJOBS},rwmixread:${FIO_RWMIXREAD}, FS: ${FS}] result ========:${N0_COLOR}"
+	${ECHO} "${H1_COLOR}======== [${PROFILE}] [bs:${FIO_BS},depth:${FIO_DEPTH},jobs:${FIO_NUMJOBS},rwmixread:${FIO_RWMIXREAD},fs:${FS}] result ========:${N0_COLOR}"
 	${ECHO} "${H2_COLOR}Read: ${R_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${R_KB}${N1_COLOR} KB/s )${N0_COLOR}"
 	${ECHO} "${H2_COLOR}Write: ${W_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${W_KB}${N1_COLOR} KB/s )${N0_COLOR}"
+	${ECHO} "${H2_COLOR}Read IOPS: ${N1_COLOR}${R_IOPS} ( max:${R_IOPS_MAX},min:${R_IOPS_MIN} )${N0_COLOR}"
+	${ECHO} "${H2_COLOR}Write IOPS: ${N1_COLOR}${W_IOPS} ( max:${W_IOPS_MAX},min:${W_IOPS_MIN} )${N0_COLOR}"
 	[ -z "${summary_file}" ] && return 0
-	echo "profile: ${PROFILE}, fs: ${FS}, read: ${R_MB}, write: ${W_MB}" >> ${summary_file}
+	echo "profile: ${PROFILE}|fs: ${FS}|read: ${R_MB}|write: ${W_MB}|r-iops: ${R_IOPS}|w-iops: ${W_IOPS}" >> ${summary_file}
 }
 
 
@@ -486,7 +488,14 @@ _json_data="/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEP
 
 READ_BW_BYTES=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0].read.bw_bytes' | ${TR_CMD} -d '"' )
 WRITE_BW_BYTES=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0].write.bw_bytes' | ${TR_CMD} -d '"' )
-RUNTIME=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0]."job options".runtime' | ${TR_CMD} -d '"' )
+R_IOPS=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0].read.iops' | ${TR_CMD} -d '"' )
+R_IOPS_MIN=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0].read.iops_min' | ${TR_CMD} -d '"' )
+R_IOPS_MAX=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0].read.iops_max' | ${TR_CMD} -d '"' )
+W_IOPS=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0].write.iops' | ${TR_CMD} -d '"' )
+W_IOPS_MIN=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0].write.iops_min' | ${TR_CMD} -d '"' )
+W_IOPS_MAX=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0].write.iops_max' | ${TR_CMD} -d '"' )
+
+#cp -a ${_json_data} /tmp/x.json
 
 R_KB=$(( READ_BW_BYTES / 1024 ))
 R_MB=$(( READ_BW_BYTES / 1024 / 1024 ))
@@ -498,9 +507,6 @@ echo
 print_stats
 # | ${COLUMN_CMD} -t
 
-#printf "${N1_COLOR}Read: ${H2_COLOR}%-10s${N1_COLOR} MB/s ( ${H2_COLOR}%-16s${N1_COLOR} KB/s )${N0_COLOR}\n" ${R_MB} ${R_KB}
-# ${H2_COLOR}${R_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${R_KB}${N1_COLOR} KB/s )${N0_COLOR}"
-#printf "${N1_COLOR}Write: ${H2_COLOR}{${W_MB}${N1_COLOR} MB/s ( ${H2_COLOR{${W_KB}${N1_COLOR} KB/s )${N0_COLOR}"
 echo
 
 # Clean
