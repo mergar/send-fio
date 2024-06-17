@@ -32,7 +32,7 @@ print_stats()
 	${ECHO} "${H2_COLOR}Read IOPS: ${R_IOPS} ( ${H1_CLOR}max:${R_IOPS_MAX},min:${R_IOPS_MIN} )${N0_COLOR}"
 	${ECHO} "${H2_COLOR}Write IOPS: ${W_IOPS} ( ${H1_CLOR}max:${W_IOPS_MAX},min:${W_IOPS_MIN} )${N0_COLOR}"
 	[ -z "${summary_file}" ] && return 0
-	echo "profile: ${PROFILE}|fs: ${FS}|read: ${R_MB}|write: ${W_MB}|r-iops: ${R_IOPS}|w-iops: ${W_IOPS}" >> ${summary_file}
+	echo "profile: ${PROFILE},|fs: ${FS},|read: ${R_MB},|write: ${W_MB},|r-iops: ${R_IOPS},|w-iops: ${W_IOPS}" >> ${summary_file}
 }
 
 
