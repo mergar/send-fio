@@ -274,7 +274,7 @@ if [ -z "${FIO_THREAD}" ]; then
 			FIO_THREAD=$( ${SYSCTL_CMD} -n hw.ncpu )
 			;;
 		Linux|SpaceVM)
-			local count=$( ${GREP_CMD} ^processor /proc/cpuinfo | ${WC_CMD} -l | ${AWK_CMD} '{printf $1}' )
+			FIO_THREAD=$( ${GREP_CMD} ^processor /proc/cpuinfo | ${WC_CMD} -l | ${AWK_CMD} '{printf $1}' )
 			;;
 	esac
 fi
