@@ -3,6 +3,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#ifndef O_DIRECT
+#define O_DIRECT	00040000	/* direct disk access hint */
+#endif
+
 int main(int argc, char *argv[])
 {
 	if (argc!=2) {
