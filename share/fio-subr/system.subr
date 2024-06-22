@@ -165,7 +165,9 @@ mktemp
 openssl
 realpath
 rm
+rmdir
 sed
+seq
 sort
 strings
 sysctl

@@ -385,13 +385,15 @@ ${MKDIR_CMD} -p /tmp/spacevm-perf-fio/tests/${FIO_BS}
 #IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
 #echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > /tmp/spacevm-perf-fio/tests/extra_info.txt
 
-
 echo "CHECK for: ${FIO_DIRECTORY}/job.0.0"
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 	if [ -d "${FIO_DIRECTORY}" ]; then
 		if [ -r "${FIO_DIRECTORY}/job.0.0" ]; then
 			echo "Clean dir: ${FIO_DIRECTORY}"
-			${RM_CMD} -rf "${FIO_DIRECTORY}"
+			for i in $( ${SEQ_CMD} 0 ${FIO_NUMJOBS} ); do
+				${RM_CMD} -f "${FIO_DIRECTORY}"/job.${i}.*
+			done
+			${RMDIR_CMD} "${FIO_DIRECTORY}" || true
 		else
 			# not for raw
 			true
@@ -514,7 +516,10 @@ if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 	if [ -d "${FIO_DIRECTORY}" ]; then
 		if [ -r "${FIO_DIRECTORY}/job.0.0" ]; then
 			echo "Clean dir: ${FIO_DIRECTORY}"
-			${RM_CMD} -rf "${FIO_DIRECTORY}"
+			for i in $( ${SEQ_CMD} 0 ${FIO_NUMJOBS} ); do
+				${RM_CMD} -f "${FIO_DIRECTORY}"/job.${i}.*
+			done
+			${RMDIR_CMD} "${FIO_DIRECTORY}" || true
 		else
 			# not for raw
 			#echo "no such dir for clean?: ${FIO_DIRECTORY}"
