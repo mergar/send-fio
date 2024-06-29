@@ -2,7 +2,7 @@
 echo "PROFILE: ${PROFILE}" | tee -a /tmp/hooks.txt
 echo "BS: ${BS}" | tee -a /tmp/hooks.txt
 echo "DEPTH: ${DEPTH}" | tee -a /tmp/hooks.txt
-echo "JOBS: ${NUMJOBS}" | tee -a /tmp/hooks.txt
+echo "JOBS: ${JOBS}" | tee -a /tmp/hooks.txt
 echo "RWMIXREAD: ${RWMIXREAD}" | tee -a /tmp/hooks.txt
 echo "FS: ${FS}" | tee -a /tmp/hooks.txt
 echo "R_MB: ${R_MB}" | tee -a /tmp/hooks.txt

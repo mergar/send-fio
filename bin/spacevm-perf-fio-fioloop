@@ -53,7 +53,7 @@ print_stats()
 		R_KB="${R_KB}" \
 		W_MB="${W_MB}" \
 		W_KB="${W_KB}" \
-		R_OPS="${R_IOPS}" \
+		R_IOPS="${R_IOPS}" \
 		R_IOPS_MAX="${R_IOPS_MAX}" \
 		R_IOPS_MIN="${R_IOPS_MIN}" \
 		W_IOPS="${W_IOPS}" \
