@@ -41,6 +41,7 @@ print_stats()
 
 	echo "Hooks found: ${_hooks}"
 	for i in ${_hooks}; do
+		echo "  :: ${i}"
 		${ENV_CMD} \
 		PROFILE="${PROFILE}" \
 		BS="${FIO_BS}" \
