@@ -153,6 +153,7 @@ curl
 cut
 dd
 df
+env
 find
 fio
 grep

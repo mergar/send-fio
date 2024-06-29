@@ -11,8 +11,8 @@ export PERF_SPACEVM_SEND=0
 
 # Auto-profiles:
 #export FIO_AUTO_PROFILE="read randread write randwrite rw randrw"
-export FIO_AUTO_PROFILE="read write"
-#export FIO_AUTO_PROFILE="read"
+#export FIO_AUTO_PROFILE="read write"
+export FIO_AUTO_PROFILE="read"
 
 # Other params
 #export FIO_AUTO_SIZE="1g"

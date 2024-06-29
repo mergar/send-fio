@@ -26,11 +26,41 @@ set +e
 
 print_stats()
 {
+	local _hooks=
+	local _hooks_dir="/usr/local/share/spacevm/hooks.d/post.d"
+
 	${ECHO} "${H1_COLOR}======== [${PROFILE}] [bs:${FIO_BS},depth:${FIO_DEPTH},jobs:${FIO_NUMJOBS},rwmixread:${FIO_RWMIXREAD},fs:${FS}] result ========:${N0_COLOR}"
 	${ECHO} "${H2_COLOR}Read: ${R_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${R_KB}${N1_COLOR} KB/s )${N0_COLOR}"
 	${ECHO} "${H2_COLOR}Write: ${W_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${W_KB}${N1_COLOR} KB/s )${N0_COLOR}"
 	${ECHO} "${H2_COLOR}Read IOPS: ${R_IOPS} ( ${H1_CLOR}max:${R_IOPS_MAX},min:${R_IOPS_MIN} )${N0_COLOR}"
 	${ECHO} "${H2_COLOR}Write IOPS: ${W_IOPS} ( ${H1_CLOR}max:${W_IOPS_MAX},min:${W_IOPS_MIN} )${N0_COLOR}"
+
+	if [ -d "${_hooks_dir}" ]; then
+		_hooks=$( ${FIND_CMD} "${_hooks_dir}" -mindepth 1 -maxdepth 1 \( -type l -or -type f \) -and  \( -perm -u=x -o -perm -g=x -o -perm -o=x \) -exec ${BASENAME_CMD} {} \; )
+	fi
+
+	echo "Hooks found: ${_hooks}"
+	for i in ${_hooks}; do
+		${ENV_CMD} \
+		PROFILE="${PROFILE}" \
+		BS="${FIO_BS}" \
+		DEPTH="${FIO_DEPTH}" \
+		JOBS="${FIO_NUMJOBS}" \
+		RWMIXREAD="${FIO_RWMIXREAD}" \
+		FS="${FS}" \
+		R_MB="${R_MB}" \
+		R_KB="${R_KB}" \
+		W_MB="${W_MB}" \
+		W_KB="${W_KB}" \
+		R_OPS="${R_IOPS}" \
+		R_IOPS_MAX="${R_IOPS_MAX}" \
+		R_IOPS_MIN="${R_IOPS_MIN}" \
+		W_IOPS="${W_IOPS}" \
+		W_IOPS_MAX="${W_IOPS_MAX}" \
+		W_IOPS_MIN="${W_IOPS_MIN}" \
+		${_hooks_dir}/${i}
+	done
+
 	[ -z "${summary_file}" ] && return 0
 	echo "profile: ${PROFILE},|fs: ${FS},|read: ${R_MB},|write: ${W_MB},|r-iops: ${R_IOPS},|w-iops: ${W_IOPS}" >> ${summary_file}
 }
