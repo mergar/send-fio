@@ -43,6 +43,8 @@ print_stats()
 	for i in ${_hooks}; do
 		echo "  :: ${i}"
 		${ENV_CMD} \
+		DEVICE="${FIO_DIRECTORY}" \
+		FIO_DIRECTORY="${FIO_DIRECTORY}" \
 		PROFILE="${PROFILE}" \
 		BS="${FIO_BS}" \
 		DEPTH="${FIO_DEPTH}" \
