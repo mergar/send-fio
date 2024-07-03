@@ -421,7 +421,7 @@ ${MKDIR_CMD} -p /tmp/spacevm-perf-fio/tests/${FIO_BS}
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 	if [ -d "${FIO_DIRECTORY}" ]; then
 		if [ -r "${FIO_DIRECTORY}/job.0.0" ]; then
-			echo "Clean dir: ${FIO_DIRECTORY}"
+			[ "${SENDFIO_DEBUG}" != "0" ] && echo "Clean dir: ${FIO_DIRECTORY}"
 			for i in $( ${SEQ_CMD} 0 ${FIO_NUMJOBS} ); do
 				${RM_CMD} -f "${FIO_DIRECTORY}"/job.${i}.*
 			done
@@ -547,7 +547,7 @@ echo
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 	if [ -d "${FIO_DIRECTORY}" ]; then
 		if [ -r "${FIO_DIRECTORY}/job.0.0" ]; then
-			echo "Clean dir: ${FIO_DIRECTORY}"
+			[ "${SENDFIO_DEBUG}" != "0" ] && echo "Clean dir: ${FIO_DIRECTORY}"
 			for i in $( ${SEQ_CMD} 0 ${FIO_NUMJOBS} ); do
 				${RM_CMD} -f "${FIO_DIRECTORY}"/job.${i}.*
 			done
