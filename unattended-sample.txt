@@ -23,7 +23,7 @@ export FIO_AUTO_RWMIXREAD=50
 
 #export SENDFIO_DEBUG=2
 #export SENDFIO_DEBUG=1
-export SENDFIO_DEBUG=0
+#export SENDFIO_DEBUG=0
 
 spacevm-perf-fio-run
 

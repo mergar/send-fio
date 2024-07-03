@@ -350,7 +350,7 @@ fi
 #FIO_DIRECTORY="/storages/local${FIO_DIRECTORY}"
 #FIO_DIRECTORY="/storages/zfs/z150_12${FIO_DIRECTORY}"
 #FIO_IOENGINE="libaio"
-echo $MY_PARAMS
+[ "${SENDFIO_DEBUG}" != "0" ] && echo $MY_PARAMS
 
 # overrides
 if [ -n "${alt_path}" ]; then
