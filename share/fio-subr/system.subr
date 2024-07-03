@@ -3,6 +3,7 @@ _SYSTEM_SUBR=1
 ###
 
 export LANG=en_US.UTF-8
+[ -z "${SENDFIO_DEBUG}" ] && SENDFIO_DEBUG=1
 
 # fatal error. Print message to stdout then quit with exitval
 err() {
@@ -101,7 +102,7 @@ set -e
 set +e
 
 if [ -r "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr" ]; then
-	echo "Info: OS-specific subr found: ${OPSYS}.subr" 1>&2
+	[ "${SENDFIO_DEBUG}" != "0" ] && echo "Info: OS-specific subr found: ${OPSYS}.subr" 1>&2
 	. "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr"
 else
 	. /usr/local/share/spacevm/fio-subr/GenericOS.subr
