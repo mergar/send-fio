@@ -363,6 +363,7 @@ CBSD_PERF_DISTRO=
 [ -r /etc/rc.conf ] && . /etc/rc.conf
 
 if [ -n "${FIO_SELECTED_DISK}" ]; then
+	FIO_DIRECTORY="${FIO_SELECTED_DISK}"
 	IS_RAW_DEVICE=1
 else
 	IS_RAW_DEVICE=0
@@ -372,6 +373,15 @@ if [ -z "${FIO_DIRECT}" ]; then
 	[ "${SENDFIO_DEBUG}" != "0" ] && printf "Auto-detect if O_DIRECT flags is supported ${FIO_DIRECTORY}: "
 	if [ ${IS_RAW_DEVICE} -eq 0 ]; then
 		[ ! -d "${FIO_DIRECTORY}" ] && ${MKDIR_CMD} -p ${FIO_DIRECTORY}
+		${TOUCH_CMD} ${FIO_DIRECTORY}/test
+		if /usr/local/bin/spacevm-direct-supported ${FIO_DIRECTORY}/test 2>/dev/null; then
+			[ "${SENDFIO_DEBUG}" != "0" ] && echo "supported"
+			FIO_DIRECT="1"
+		else
+			[ "${SENDFIO_DEBUG}" != "0" ] && echo "not supported"
+			FIO_DIRECT="0"
+		fi
+		${RM_CMD} -f ${FIO_DIRECTORY}/test
 	fi
 	if /usr/local/bin/spacevm-direct-supported ${FIO_DIRECTORY} 2>/dev/null; then
 		[ "${SENDFIO_DEBUG}" != "0" ] && echo "supported"
@@ -433,9 +443,10 @@ if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 		fi
 	fi
 fi
-${MKDIR_CMD} -p "${FIO_DIRECTORY}"
 
 if [ ${IS_RAW_DEVICE} -ne 1 ]; then
+	${MKDIR_CMD} -p "${FIO_DIRECTORY}"
+
 	_p1=$( ${DF_CMD} -h ${FIO_DIRECTORY} | ${TAIL_CMD} -n1 | ${AWK_CMD} '{printf $1}' )
 	case "${OS}" in
 		FreeBSD|Liman)
@@ -456,9 +467,9 @@ fi
 
 #CBSD_PERF_DISTRO=
 #[ -r /etc/rc.conf ] && . /etc/rc.conf
-if [ "${CBSD_PERF_DISTRO}" = "1" ]; then
+if [ ${IS_RAW_DEVICE} -eq 1 ]; then
 	${CP_CMD} -a /tmp/profile.fio /tmp/profile.bak
-	${GREP_CMD} -v directory /tmp/profile.bak > /tmp/profile.fio
+	${GREP_CMD} -v directory= /tmp/profile.bak > /tmp/profile.fio
 	if [ -z "${FIO_SELECTED_DISK}" ]; then
 		echo "No such FIO_SELECTED_DISK"
 		exit 1

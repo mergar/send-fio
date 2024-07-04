@@ -76,6 +76,8 @@ check_head_disk()
 
 	[ -z "${1}" ] && return 2
 
+	[ -z "${tmpdir}" ] && tmpdir="/tmp"
+
 	${DD_CMD} if=${1} of=${tmpdir}/is_empty.$$ bs=256k count=1 > /dev/null 2>&1
 	_res=$( ${STRINGS_CMD} ${tmpdir}/is_empty.$$ | ${WC_CMD} -w | ${AWK_CMD} {'printf $1'} )
 	${RM_CMD} -f ${tmpdir}/is_empty.$$
@@ -93,7 +95,7 @@ init_color
 
 if [ -n "${1}" ]; then
 	if [ ! -d "${1}" ]; then
-		if [ -c "${1}" ]; then
+		if [ -e "${1}" ]; then
 			FIO_SELECTED_DISK="${1}"
 		else
 			err 1 "no such directory: ${1}"
@@ -105,14 +107,36 @@ fi
 
 if [ -z "${FIO_SELECTED_DISK}" -a -n "${FIO_DIRECTORY}" ]; then
 	if [ ! -d "${FIO_DIRECTORY}" ]; then
-		if [ -c "${FIO_DIRECTORY}" ]; then
-			FIO_SELECTED_DISK="${1}"
+		if [ -e "${FIO_DIRECTORY}" ]; then
+			export FIO_SELECTED_DISK="${FIO_DIRECTORY}"
 		else
-			err 1 "no such directory: ${1}"
+			err 1 "no such directory: ${FIO_DIRECTORY}"
 		fi
 	else
-		ALT_PATH="-p ${1}"
+		ALT_PATH="-p ${FIO_DIRECTORY}"
 	fi
+fi
+
+if [ -n "${FIO_SELECTED_DISK}" ]; then
+	for i in ${FIO_SELECTED_DISK}; do
+		if [ "${DESTROY_DISK_DATA}" != "1" ]; then
+			check_head_disk ${i}
+			_ret=$?
+		else
+			_ret=0
+		fi
+
+		case "${_ret}" in
+			0)
+				true
+				;;
+			1)
+				dsk_info ${i}
+
+				err 1 "${H2_COLOR}${i} [${DSK_INFO}, Size: ${BSIZE} - DIRTY] (needs env DESTROY_DISK_DATA=1 to use this disk) ${N0_COLOR}"
+				;;
+		esac
+	done
 fi
 
 select_disks()

@@ -160,6 +160,7 @@ fio
 grep
 head
 jq
+ls
 mkdir
 mount
 mv
@@ -213,6 +214,26 @@ if [ "${MY_USER}" != "root" ]; then
 	exit 1
 fi
 
+get_disk_id()
+{
+	local _val=
+	local _x=
+
+	_val=$( ${LS_CMD} -1 /dev/disk/by-id/ | while read _xid; do
+		_x=$( ${REALPATH_CMD} /dev/disk/by-id/${_xid} 2>/dev/null )
+		[ -z "${_x}" ] && continue
+		if [ "${_x}" = "${1}" ]; then
+			echo "${_xid}" && exit 0
+		else
+			continue
+		fi
+	done )
+
+	[ -z "${_val}" ] && _val="unknown"
+	printf "${_val}"
+}
+
+
 # return DSK_INFO (text/vendor info for /dev/$1 ) and BSIZE (size in bytes)
 dsk_info()
 {
@@ -221,6 +242,17 @@ dsk_info()
 
 	DSK_INFO=
 	BSIZE=
+
+	case "${OS}" in
+		Linux|SpaceVM)
+			BSIZE=$( ${LSBLK_CMD} -n --raw ${1} | ${GREP_CMD} " disk" | ${AWK_CMD} '{printf $4}' )
+			DSK_INFO=$( get_disk_id ${1} )
+			return 0
+			;;
+		*)
+			true
+			;;
+	esac
 
 	# Try and find some identification information with camcontrol or atacontrol
 	DSK_INFO=$( ${CAMCONTROL_CMD} identify /dev/${_dev} 2>/dev/null | ${SED_CMD} -ne 's/^device model *//p' )

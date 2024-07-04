@@ -1,11 +1,13 @@
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 
-#ifndef O_DIRECT
-#define O_DIRECT	00040000	/* direct disk access hint */
-#endif
+//#ifndef O_DIRECT
+//#define O_DIRECT	00040000	/* direct disk access hint */
+//#endif
 
 int main(int argc, char *argv[])
 {
