@@ -21,6 +21,10 @@ export FIO_AUTO_RUNTIME=10
 #export FIO_AUTO_RWMIXREAD=30
 export FIO_AUTO_RWMIXREAD=50
 
+#export SENDFIO_DEBUG=2
+#export SENDFIO_DEBUG=1
+#export SENDFIO_DEBUG=0
+
 spacevm-perf-fio-run
 
 # or bench custom mount-point/FS:

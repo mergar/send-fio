@@ -88,8 +88,8 @@ check_head_disk()
 
 ## MAIN
 init_color
-${ECHO} "${N1_COLOR}OS: ${N2_COLOR}${OS}${N0_COLOR}"
-${ECHO} "${N1_COLOR}OPSYS: ${N2_COLOR}${OPSYS}${N0_COLOR}"
+[ "${SENDFIO_DEBUG}" != "0" ] && ${ECHO} "${N1_COLOR}OS: ${N2_COLOR}${OS}${N0_COLOR}"
+[ "${SENDFIO_DEBUG}" != "0" ] && ${ECHO} "${N1_COLOR}OPSYS: ${N2_COLOR}${OPSYS}${N0_COLOR}"
 
 if [ -n "${1}" ]; then
 	if [ ! -d "${1}" ]; then
@@ -240,12 +240,13 @@ if [ -z "${FIO_SELECTED_DISK}" ]; then
 			echo "no such ${SELECTED_DISK}"
 			exit 1
 		fi
-		echo "SELECTED ${SELECTED_DISK}"
-		sysrc -qf /etc/rc.conf FIO_SELECTED_DISK="${SELECTED_DISK}"
+		[ "${SENDFIO_DEBUG}" != "0" ] && echo "SELECTED ${SELECTED_DISK}"
+		update_param /etc/rc.conf FIO_SELECTED_DISK "${SELECTED_DISK}"
 	fi
 else
-	sysrc -qf /etc/rc.conf FIO_SELECTED_DISK="${FIO_SELECTED_DISK}"
+	update_param /etc/rc.conf FIO_SELECTED_DISK "${FIO_SELECTED_DISK}"
 fi
+
 # network setup
 setup_proxies
 

@@ -111,7 +111,6 @@ fio_loop()
 	#z150_11 on /storages/zfs/z150_11 type zfs (rw,noatime,xattr,posixacl)
 	#/dev/mapper/3600143801259dcf30001000001640000 on /storages/gfs2/gfs2_3053831c type gfs2 (rw,noatime,nodiratime,debug,x-systemd.automount,_netdev)
 
-cp /tmp/run-fio-spacevm-volumes.conf /tmp/oke
 	if [ -r /tmp/run-fio-spacevm-volumes.conf ]; then
 
 		_tmpdir=$( ${MKTEMP_CMD} -d )
@@ -149,7 +148,6 @@ cp /tmp/run-fio-spacevm-volumes.conf /tmp/oke
 			POOL=$( cat ${_tmpdir}/${POOL}.real )
 		fi
 
-		echo "X POOL: ${POOL}"
 		${RM_CMD} -rf ${_tmpdir}
 
 		[ -z "${POOL}" ] && exit 0

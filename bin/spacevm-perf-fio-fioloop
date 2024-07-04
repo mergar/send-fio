@@ -39,9 +39,9 @@ print_stats()
 		_hooks=$( ${FIND_CMD} "${_hooks_dir}" -mindepth 1 -maxdepth 1 \( -type l -or -type f \) -and  \( -perm -u=x -o -perm -g=x -o -perm -o=x \) -exec ${BASENAME_CMD} {} \; )
 	fi
 
-	echo "Hooks found: ${_hooks}"
+	[ "${SENDFIO_DEBUG}" != "0" ] && echo "Hooks found: ${_hooks}"
 	for i in ${_hooks}; do
-		echo "  :: ${i}"
+		[ "${SENDFIO_DEBUG}" != "0" ] && echo "  :: ${i}"
 		${ENV_CMD} \
 		DEVICE="${FIO_DIRECTORY}" \
 		FIO_DIRECTORY="${FIO_DIRECTORY}" \
@@ -211,7 +211,7 @@ BENCH_TPL="${checkin_server}/${TYPE}/${PROFILE}.fio"
 BENCH_CONFIG="${checkin_server}/${TYPE}/${PROFILE}.config"
 BENCH_DEFAULTS_CONFIG="${checkin_server}/${TYPE}/defaults.config"
 
-echo "TPL2: ${BENCH_TPL}, CFG: ${BENCH_CONFIG}, OFFLINE: ${FIO_OFFLINE_MODE}"
+[ "${SENDFIO_DEBUG}" != "0" ] && echo "TPL2: ${BENCH_TPL}, CFG: ${BENCH_CONFIG}, OFFLINE: ${FIO_OFFLINE_MODE}"
 
 if [ ${FIO_OFFLINE_MODE} -eq 0 ]; then
 	_res=$( ${CURL_CMD} ${CURL_OPT} -o /tmp/defaults.config ${BENCH_DEFAULTS_CONFIG} 2>&1 )
@@ -251,7 +251,6 @@ if [ ${FIO_OFFLINE_MODE} -eq 0 ]; then
 		err 1 "${_res}"
 	fi
 else
-	echo "${CP_CMD} -a /usr/local/share/spacevm/fio/www/${PROFILE}.config /tmp/profile.conf.tpl"
 	${CP_CMD} -a /usr/local/share/spacevm/fio/www/${PROFILE}.fio /tmp/profile.conf.tpl
 	ret=$?
 fi
@@ -292,7 +291,7 @@ if [ -n "${MY_PARAMS}" ]; then
 	for i in ${MY_PARAMS}; do
 		eval VAL="\$FIO_AUTO_${i}"
 		if [ -n "${VAL}" ]; then
-			echo "environment override for: $i (${VAL})"
+			[ "${SENDFIO_DEBUG}" != "0" ] && echo "environment override for: $i (${VAL})"
 			eval FIO_${i}="${VAL}"
 		fi
 	done
@@ -351,7 +350,7 @@ fi
 #FIO_DIRECTORY="/storages/local${FIO_DIRECTORY}"
 #FIO_DIRECTORY="/storages/zfs/z150_12${FIO_DIRECTORY}"
 #FIO_IOENGINE="libaio"
-echo $MY_PARAMS
+[ "${SENDFIO_DEBUG}" != "0" ] && echo $MY_PARAMS
 
 # overrides
 if [ -n "${alt_path}" ]; then
@@ -370,27 +369,27 @@ else
 fi
 
 if [ -z "${FIO_DIRECT}" ]; then
-	printf "Auto-detect if O_DIRECT flags is supported ${FIO_DIRECTORY}: "
+	[ "${SENDFIO_DEBUG}" != "0" ] && printf "Auto-detect if O_DIRECT flags is supported ${FIO_DIRECTORY}: "
 	if [ ${IS_RAW_DEVICE} -eq 0 ]; then
 		[ ! -d "${FIO_DIRECTORY}" ] && ${MKDIR_CMD} -p ${FIO_DIRECTORY}
 	fi
 	if /usr/local/bin/spacevm-direct-supported ${FIO_DIRECTORY} 2>/dev/null; then
-		echo "supported"
+		[ "${SENDFIO_DEBUG}" != "0" ] && echo "supported"
 		FIO_DIRECT="1"
 	else
-		echo "not supported"
+		[ "${SENDFIO_DEBUG}" != "0" ] && echo "not supported"
 		FIO_DIRECT="0"
 	fi
 fi
 
 if [ -z "${FIO_BS}" ]; then
-	printf "Auto-detect for BS ${FIO_DIRECTORY}: "
+	[ "${SENDFIO_DEBUG}" != "0" ] && printf "Auto-detect for BS ${FIO_DIRECTORY}: "
 	if [ ${IS_RAW_DEVICE} -eq 1 ]; then
 		FIO_BS="1m"
 	else
 		FIO_BS="4k"
 	fi
-	echo "${FIO_BS}"
+	[ "${SENDFIO_DEBUG}" != "0" ] && echo "${FIO_BS}"
 fi
 if [ -n "${MY_PARAMS}" ]; then
 	for i in ${MY_PARAMS}; do
@@ -410,7 +409,7 @@ fi
 
 
 ${MV_CMD} /tmp/profile.conf.tpl /tmp/profile.fio
-echo "FIO_DIR: ${FIO_DIRECTORY}"
+[ "${SENDFIO_DEBUG}" != "0" ] && echo "FIO_DIR: ${FIO_DIRECTORY}"
 [ -d /tmp/spacevm-perf-fio/tests ] && ${RM_CMD} -rf /tmp/spacevm-perf-fio/tests
 ${MKDIR_CMD} -p /tmp/spacevm-perf-fio/tests/${FIO_BS}
 
@@ -418,11 +417,11 @@ ${MKDIR_CMD} -p /tmp/spacevm-perf-fio/tests/${FIO_BS}
 #IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
 #echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > /tmp/spacevm-perf-fio/tests/extra_info.txt
 
-echo "CHECK for: ${FIO_DIRECTORY}/job.0.0"
+[ "${SENDFIO_DEBUG}" != "0" ] && echo "CHECK for: ${FIO_DIRECTORY}/job.0.0"
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 	if [ -d "${FIO_DIRECTORY}" ]; then
 		if [ -r "${FIO_DIRECTORY}/job.0.0" ]; then
-			echo "Clean dir: ${FIO_DIRECTORY}"
+			[ "${SENDFIO_DEBUG}" != "0" ] && echo "Clean dir: ${FIO_DIRECTORY}"
 			for i in $( ${SEQ_CMD} 0 ${FIO_NUMJOBS} ); do
 				${RM_CMD} -f "${FIO_DIRECTORY}"/job.${i}.*
 			done
@@ -476,7 +475,7 @@ fi
 # VEIL
 #IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
 #echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > /tmp/spacevm-perf-fio/tests/extra_info.txt
-echo "${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json /tmp/profile.fio --eta-newline=1"
+[ "${SENDFIO_DEBUG}" != "0" ] && echo "${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json /tmp/profile.fio --eta-newline=1"
 
 # randread-iodepth-1-numjobs-2
 ${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp /tmp/profile.fio --eta-newline=1
@@ -548,7 +547,7 @@ echo
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
 	if [ -d "${FIO_DIRECTORY}" ]; then
 		if [ -r "${FIO_DIRECTORY}/job.0.0" ]; then
-			echo "Clean dir: ${FIO_DIRECTORY}"
+			[ "${SENDFIO_DEBUG}" != "0" ] && echo "Clean dir: ${FIO_DIRECTORY}"
 			for i in $( ${SEQ_CMD} 0 ${FIO_NUMJOBS} ); do
 				${RM_CMD} -f "${FIO_DIRECTORY}"/job.${i}.*
 			done
