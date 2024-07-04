@@ -103,6 +103,18 @@ if [ -n "${1}" ]; then
 	fi
 fi
 
+if [ -z "${FIO_SELECTED_DISK}" -a -n "${FIO_DIRECTORY}" ]; then
+	if [ ! -d "${FIO_DIRECTORY}" ]; then
+		if [ -c "${FIO_DIRECTORY}" ]; then
+			FIO_SELECTED_DISK="${1}"
+		else
+			err 1 "no such directory: ${1}"
+		fi
+	else
+		ALT_PATH="-p ${1}"
+	fi
+fi
+
 select_disks()
 {
 	local clean_disk_num=1
