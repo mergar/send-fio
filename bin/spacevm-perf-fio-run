@@ -229,11 +229,12 @@ if [ -z "${FIO_SELECTED_DISK}" ]; then
 			exit 1
 		fi
 		[ "${SENDFIO_DEBUG}" != "0" ] && echo "SELECTED ${SELECTED_DISK}"
-		sysrc -qf /etc/rc.conf FIO_SELECTED_DISK="${SELECTED_DISK}" >/dev/null 2>&1
+		update_param /etc/rc.conf FIO_SELECTED_DISK "${SELECTED_DISK}"
 	fi
 else
-	sysrc -qf /etc/rc.conf FIO_SELECTED_DISK="${FIO_SELECTED_DISK}" >/dev/null 2>&1
+	update_param /etc/rc.conf FIO_SELECTED_DISK "${FIO_SELECTED_DISK}"
 fi
+
 # network setup
 setup_proxies
 
