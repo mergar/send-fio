@@ -1,10 +1,10 @@
-PORTNAME=	spacevm-sendfio
+PORTNAME=	mybee-sendfio
 DISTVERSION=	0.1
 CATEGORIES=	sysutils
 
 MAINTAINER=	olevole@olevole.ru
-COMMENT=	SpaceVM sendfio stats
-WWW=		https://perf.beeru.online
+COMMENT=	MyBee sendfio stats
+WWW=		https://fio.beeru.online
 
 LICENSE=	BSD2CLAUSE
 LICENSE_FILE=	${WRKSRC}/LICENSE

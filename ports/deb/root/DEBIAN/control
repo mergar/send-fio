@@ -1,11 +1,11 @@
-Package: spacevm-sendfio
+Package: mybee-sendfio
 Version: 0.4
 Architecture: amd64
-Maintainer: space team <info@spacevm.org>
+Maintainer: MyBee team <info@convectix.com>
 Depends: jq, curl, fio, binutils, bsdextrautils
-Provides: spacevm-sendfio
+Provides: mybee-sendfio
 Section: devel
 Priority: extra
-Homepage: http://perf.beeru.online
-Description: SpaceVM utils files.
-  (c) 2023-2024 LLC «DACOM M»
+Homepage: http://fio.beeru.online
+Description: MyBee sendfio files.
+  (c) 2022-2024 MyBee Project.
