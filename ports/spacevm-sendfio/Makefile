@@ -4,7 +4,7 @@ CATEGORIES=	sysutils
 
 MAINTAINER=	olevole@olevole.ru
 COMMENT=	SpaceVM sendfio stats
-WWW=		https://spacevm.ru
+WWW=		https://perf.beeru.online
 
 LICENSE=	BSD2CLAUSE
 LICENSE_FILE=	${WRKSRC}/LICENSE

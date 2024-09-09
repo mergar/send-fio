@@ -6,7 +6,7 @@ export PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
 FIO_OFFLINE_MODE=0
 
 # Primary server to fetch/upload jobs/result
-checkin_server="http://perf.spacevm.ru"
+checkin_server="http://perf.beeru.online"
 url="${checkin_server}"
 
 BENCH_CONF_URL="${checkin_server}/test.conf"

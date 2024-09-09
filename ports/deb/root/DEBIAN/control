@@ -6,6 +6,6 @@ Depends: jq, curl, fio, binutils, bsdextrautils
 Provides: spacevm-sendfio
 Section: devel
 Priority: extra
-Homepage: http://spacevm.ru
+Homepage: http://perf.beeru.online
 Description: SpaceVM utils files.
   (c) 2023-2024 LLC «DACOM M»
