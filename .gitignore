@@ -14,9 +14,10 @@ fio/tests.tgz
 .bash_history
 .selected_editor
 .lesshst
-bin/spacevm-select-item
-bin/spacevm-direct-supported
 bin/select_jail
 ports/spacevm-sendfio/work
 ports/deb/root/usr
 ports/deb/*.deb
+bin/myb-direct-supported
+bin/myb-select-item
+
