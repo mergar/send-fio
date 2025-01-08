@@ -470,7 +470,7 @@ report_system()
 	# FIO
 	TYPE="fio"
 
-	cat >  /tmp/spacevm-perf-fio/tests/identify.txt <<EOF
+	cat >  /tmp/myb-perf-fio/tests/identify.txt <<EOF
 rel="${REL}"
 arch="${ARCH}"
 opsys="${OPSYS}"
@@ -481,7 +481,7 @@ is_virtual="${is_virtual}"
 bench_type="${TYPE}"
 EOF
 
-	cd  /tmp/spacevm-perf-fio
+	cd  /tmp/myb-perf-fio
 	_res=$( ${TAR_CMD} cfz tests.tgz tests 2>&1 )
 	_ret=$?
 

@@ -38,8 +38,8 @@ fio_loop()
 						fi
 						${GREP_CMD} -v '^#' /tmp/index.conf.$$ > /tmp/index.conf
 					else
-						echo "info: use /usr/local/share/spacevm/fio/www/index.tests" 1>&2
-						${GREP_CMD} -v '^#' /usr/local/share/spacevm/fio/www/index.tests > /tmp/index.conf
+						echo "info: use /usr/local/share/myb/fio/www/index.tests" 1>&2
+						${GREP_CMD} -v '^#' /usr/local/share/myb/fio/www/index.tests > /tmp/index.conf
 					fi
 					echo "fetched config:"
 					${CAT_CMD} /tmp/index.conf
@@ -54,10 +54,10 @@ fio_loop()
 
 	if [ -n "${_all_profiles}" ]; then
 		for i in ${_all_profiles}; do
-			/usr/local/bin/spacevm-perf-fio-fioloop -t ${i} ${ALT_PATH} ${SUMMARY_FILE_ARGS} && /usr/local/bin/spacevm-perf-fio-send
+			/usr/local/bin/myb-perf-fio-fioloop -t ${i} ${ALT_PATH} ${SUMMARY_FILE_ARGS} && /usr/local/bin/myb-perf-fio-send
 		done
 	else
-		/usr/local/bin/spacevm-perf-fio-fioloop ${ALT_PATH} ${SUMMARY_FILE_ARGS} && /usr/local/bin/spacevm-perf-fio-send
+		/usr/local/bin/myb-perf-fio-fioloop ${ALT_PATH} ${SUMMARY_FILE_ARGS} && /usr/local/bin/myb-perf-fio-send
 	fi
 
 	set +o xtrace

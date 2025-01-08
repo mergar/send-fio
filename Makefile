@@ -1,4 +1,4 @@
-BRAND=spacevm
+BRAND=myb
 PREFIX?=/usr/local
 SHARE_DIR?=share
 SCRIPT_SHARE_DIR?=${BRAND}

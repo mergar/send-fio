@@ -32,7 +32,7 @@ FIO_AUTO_PROFILE - select profile for test (can be multiple, use ',' for delimer
   'write'     - sequential WRITE.
 FIO_AUTO_RWMIXREAD - balance between read and write, default: 50;
                      FIO_AUTO_RWMIXREAD=30  would mean that 30% of the I/O will be READs and 70% will be WRITEs;
-FIO_AUTO_POST      - post statistic to external SpaceVM-perf service. FIO_CHECKIN_SERVER can be used:
+FIO_AUTO_POST      - post statistic to external MyB-perf service. FIO_CHECKIN_SERVER can be used:
   '1' - to send statistics (by default);
   '0' - to skip;
 FIO_CHECKIN_SERVER - override destination server for post statistics. Default: inherits ISO source site;
@@ -43,15 +43,15 @@ FIO_AUTO_RUNTIME   - change 'fio' RUNTIME settings;
 
 Example:
 
-env FIO_AUTO_POST=0 FIO_AUTO_PROFILE=read spacevm-perf-fio-run
-env FIO_AUTO_PROFILE=rw,randrw FIO_AUTO_RWMIXREAD=30 spacevm-perf-fio-run
-env CHECKIN_SERVER=https://perf.example.local spacevm-perf-fio-run
+env FIO_AUTO_POST=0 FIO_AUTO_PROFILE=read myb-perf-fio-run
+env FIO_AUTO_PROFILE=rw,randrw FIO_AUTO_RWMIXREAD=30 myb-perf-fio-run
+env CHECKIN_SERVER=https://perf.example.local myb-perf-fio-run
 
 EOF
 }
 
 set -e
-. /usr/local/share/spacevm/fio-subr/system.subr
+. /usr/local/share/myb/fio-subr/system.subr
 set +e
 
 if [ -n "${DESTROY_DISK_DATA}" ]; then
@@ -222,8 +222,8 @@ select_disks()
 	local subject="Select base sources:"
 	${ECHO} "${N1_COLOR}${subject}${N0_COLOR}"
 
-	#/usr/local/bin/spacevm-perf-fio-run ${_tmpdir} ${_tmpfile} item ${_def_method}
-	/usr/local/bin/spacevm-select-item ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
+	#/usr/local/bin/myb-perf-fio-run ${_tmpdir} ${_tmpfile} item ${_def_method}
+	/usr/local/bin/myb-select-item ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
 	_ret=$?
 	${RM_CMD} -rf ${_tmpdir}
 
@@ -291,8 +291,8 @@ fi
 
 export FIO_OFFLINE_MODE="${FIO_OFFLINE_MODE}"
 
-if [ -r "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr" ]; then
-	. "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr"
+if [ -r "/usr/local/share/myb/fio-subr/${OPSYS}.subr" ]; then
+	. "/usr/local/share/myb/fio-subr/${OPSYS}.subr"
 fi
 
 SUMMARY_FILE=$( mktemp )
@@ -308,6 +308,6 @@ ${CAT_CMD} ${SUMMARY_FILE} | ${COLUMN_CMD} -t -s ','
 
 ${RM_CMD} -f ${SUMMARY_FILE}
 
-${ECHO} "${N2_COLOR}Please type for re-run: ${N2_COLOR}/usr/local/bin/spacevm-perf-fio-run${N0_COLOR}"
+${ECHO} "${N2_COLOR}Please type for re-run: ${N2_COLOR}/usr/local/bin/myb-perf-fio-run${N0_COLOR}"
 
 exit ${ret}

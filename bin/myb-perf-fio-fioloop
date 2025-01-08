@@ -21,13 +21,13 @@ while getopts "d:e:p:s:t:" opt; do
 done
 
 set -e
-. /usr/local/share/spacevm/fio-subr/system.subr
+. /usr/local/share/myb/fio-subr/system.subr
 set +e
 
 print_stats()
 {
 	local _hooks=
-	local _hooks_dir="/usr/local/share/spacevm/hooks.d/post.d"
+	local _hooks_dir="/usr/local/share/myb/hooks.d/post.d"
 
 	${ECHO} "${H1_COLOR}======== [${PROFILE}] [bs:${FIO_BS},depth:${FIO_DEPTH},jobs:${FIO_NUMJOBS},rwmixread:${FIO_RWMIXREAD},fs:${FS}] result ========:${N0_COLOR}"
 	${ECHO} "${H2_COLOR}Read: ${R_MB}${N1_COLOR} MB/s ( ${H2_COLOR}${R_KB}${N1_COLOR} KB/s )${N0_COLOR}"
@@ -121,8 +121,8 @@ if [ -z "${AUTO_PROFILE}" -o "${AUTO_PROFILE}" = "manual" ]; then
 		fi
 		${GREP_CMD} -v '^#' /tmp/index.conf.$$ > /tmp/index.conf
 	else
-		echo "info: use /usr/local/share/spacevm/fio/www/index.tests" 1>&2
-		${GREP_CMD} -v '^#' /usr/local/share/spacevm/fio/www/index.tests > /tmp/index.conf
+		echo "info: use /usr/local/share/myb/fio/www/index.tests" 1>&2
+		${GREP_CMD} -v '^#' /usr/local/share/myb/fio/www/index.tests > /tmp/index.conf
 	fi
 
 	# check for "profile: desc" form in index
@@ -152,8 +152,8 @@ if [ -z "${AUTO_PROFILE}" -o "${AUTO_PROFILE}" = "manual" ]; then
 
 	subject="Select test profile (${_def_method}):"
 	${ECHO} "${N1_COLOR}${subject}${N0_COLOR}"
-	#/usr/local/bin/spacevm-select-item ${_tmpdir} ${_tmpfile} item ${_def_method}
-	/usr/local/bin/spacevm-select-item ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
+	#/usr/local/bin/myb-select-item ${_tmpdir} ${_tmpfile} item ${_def_method}
+	/usr/local/bin/myb-select-item ${_tmpdir} ${_tmpfile} item ${_def_method} 2>/dev/null
 	_ret=$?
 	${RM_CMD} -rf ${_tmpdir}
 
@@ -221,7 +221,7 @@ if [ ${FIO_OFFLINE_MODE} -eq 0 ]; then
 		err 1 "${_res}"
 	fi
 else
-	${CP_CMD} -a /usr/local/share/spacevm/fio/www/defaults.config /tmp/defaults.config
+	${CP_CMD} -a /usr/local/share/myb/fio/www/defaults.config /tmp/defaults.config
 	ret=$?
 fi
 
@@ -236,7 +236,7 @@ if [ ${FIO_OFFLINE_MODE} -eq 0 ]; then
 		err 1 "${_res}"
 	fi
 else
-	${CP_CMD} -a /usr/local/share/spacevm/fio/www/${PROFILE}.config /tmp/defaults.config
+	${CP_CMD} -a /usr/local/share/myb/fio/www/${PROFILE}.config /tmp/defaults.config
 	ret=$?
 fi
 
@@ -251,7 +251,7 @@ if [ ${FIO_OFFLINE_MODE} -eq 0 ]; then
 		err 1 "${_res}"
 	fi
 else
-	${CP_CMD} -a /usr/local/share/spacevm/fio/www/${PROFILE}.fio /tmp/profile.conf.tpl
+	${CP_CMD} -a /usr/local/share/myb/fio/www/${PROFILE}.fio /tmp/profile.conf.tpl
 	ret=$?
 fi
 
@@ -374,7 +374,7 @@ if [ -z "${FIO_DIRECT}" ]; then
 	if [ ${IS_RAW_DEVICE} -eq 0 ]; then
 		[ ! -d "${FIO_DIRECTORY}" ] && ${MKDIR_CMD} -p ${FIO_DIRECTORY}
 		${TOUCH_CMD} ${FIO_DIRECTORY}/test
-		if /usr/local/bin/spacevm-direct-supported ${FIO_DIRECTORY}/test 2>/dev/null; then
+		if /usr/local/bin/myb-direct-supported ${FIO_DIRECTORY}/test 2>/dev/null; then
 			[ "${SENDFIO_DEBUG}" != "0" ] && echo "supported"
 			FIO_DIRECT="1"
 		else
@@ -383,7 +383,7 @@ if [ -z "${FIO_DIRECT}" ]; then
 		fi
 		${RM_CMD} -f ${FIO_DIRECTORY}/test
 	fi
-	if /usr/local/bin/spacevm-direct-supported ${FIO_DIRECTORY} 2>/dev/null; then
+	if /usr/local/bin/myb-direct-supported ${FIO_DIRECTORY} 2>/dev/null; then
 		[ "${SENDFIO_DEBUG}" != "0" ] && echo "supported"
 		FIO_DIRECT="1"
 	else
@@ -420,12 +420,12 @@ fi
 
 ${MV_CMD} /tmp/profile.conf.tpl /tmp/profile.fio
 [ "${SENDFIO_DEBUG}" != "0" ] && echo "FIO_DIR: ${FIO_DIRECTORY}"
-[ -d /tmp/spacevm-perf-fio/tests ] && ${RM_CMD} -rf /tmp/spacevm-perf-fio/tests
-${MKDIR_CMD} -p /tmp/spacevm-perf-fio/tests/${FIO_BS}
+[ -d /tmp/myb-perf-fio/tests ] && ${RM_CMD} -rf /tmp/myb-perf-fio/tests
+${MKDIR_CMD} -p /tmp/myb-perf-fio/tests/${FIO_BS}
 
 # VEIL
 #IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
-#echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > /tmp/spacevm-perf-fio/tests/extra_info.txt
+#echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > /tmp/myb-perf-fio/tests/extra_info.txt
 
 [ "${SENDFIO_DEBUG}" != "0" ] && echo "CHECK for: ${FIO_DIRECTORY}/job.0.0"
 if [ -n "${FIO_DIRECTORY}" -a "${FIO_DIRECTORY}" != "/" ]; then
@@ -480,16 +480,16 @@ if [ ${IS_RAW_DEVICE} -eq 1 ]; then
 	dsk_info ${i}
 	conv2human ${BSIZE}
 	SIZE="${human_val}"
-	echo "raw disk: ${FIO_SELECTED_DISK},size: ${SIZE}, model: ${DSK_INFO}" > /tmp/spacevm-perf-fio/tests/extra_info.txt
+	echo "raw disk: ${FIO_SELECTED_DISK},size: ${SIZE}, model: ${DSK_INFO}" > /tmp/myb-perf-fio/tests/extra_info.txt
 fi
 
 # VEIL
 #IN_USE=$( df -h /storages/local/tmp/test/job.0.0 | ${GREP_CMD} -v Filesystem | ${AWK_CMD} '{printf $5}' )
-#echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > /tmp/spacevm-perf-fio/tests/extra_info.txt
-[ "${SENDFIO_DEBUG}" != "0" ] && echo "${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json /tmp/profile.fio --eta-newline=1"
+#echo "pool:${FIO_DIRECTORY},inuse:${IN_USE}" > /tmp/myb-perf-fio/tests/extra_info.txt
+[ "${SENDFIO_DEBUG}" != "0" ] && echo "${FIO_CMD} --output-format=json --output=/tmp/myb-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json /tmp/profile.fio --eta-newline=1"
 
 # randread-iodepth-1-numjobs-2
-${FIO_CMD} --output-format=json --output=/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp /tmp/profile.fio --eta-newline=1
+${FIO_CMD} --output-format=json --output=/tmp/myb-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp /tmp/profile.fio --eta-newline=1
 _ret=$?
 
 # skip potential errors in json:
@@ -504,24 +504,24 @@ _ret=$?
 #{
 #  "fio version" : "fio-3.36",
 # ..
-grep ^fio: /tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp
+grep ^fio: /tmp/myb-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp
 ret=$?
 if [ ${ret} -eq 0 ]; then
-	${GREP_CMD} -v ^fio: /tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp > /tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json
+	${GREP_CMD} -v ^fio: /tmp/myb-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp > /tmp/myb-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json
 else
-	${MV_CMD} /tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp /tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json
+	${MV_CMD} /tmp/myb-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json.tmp /tmp/myb-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json
 fi
 
-#echo "/tmp/spacevm-perf-fio/tests/profile.txt
+#echo "/tmp/myb-perf-fio/tests/profile.txt
 
-echo "profile=\"${PROFILE}\"" > /tmp/spacevm-perf-fio/tests/fio.conf
+echo "profile=\"${PROFILE}\"" > /tmp/myb-perf-fio/tests/fio.conf
 
 ${GREP_CMD} "^[a-z]*=" /tmp/profile.fio | while read a; do
 	p1=${a%%=*}
 	p2=${a##*=}
 	case "${p1}" in
 		runtime|bs|ioengine|numjobs|size|iodepth|rwmixread)
-			echo "${a}" >> /tmp/spacevm-perf-fio/tests/fio.conf
+			echo "${a}" >> /tmp/myb-perf-fio/tests/fio.conf
 			;;
 		*)
 			;;
@@ -529,7 +529,7 @@ ${GREP_CMD} "^[a-z]*=" /tmp/profile.fio | while read a; do
 done
 
 # print result
-_json_data="/tmp/spacevm-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json"
+_json_data="/tmp/myb-perf-fio/tests/${FIO_BS}/${PROFILE}-iodepth-${FIO_IODEPTH}-numjobs-${FIO_NUMJOBS}.json"
 
 READ_BW_BYTES=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0].read.bw_bytes' | ${TR_CMD} -d '"' )
 WRITE_BW_BYTES=$( ${CAT_CMD} ${_json_data} | ${JQ_CMD} '.jobs[0].write.bw_bytes' | ${TR_CMD} -d '"' )

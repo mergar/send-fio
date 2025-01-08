@@ -51,7 +51,7 @@ for i in ${MYOPTARG}; do
 done
 
 # read global config
-for i in spacevm-perf-fio.conf.sample spacevm-perf-fio.conf; do
+for i in myb-perf-fio.conf.sample myb-perf-fio.conf; do
 	[ -r /usr/local/etc/send-fio/${i} ] && . /usr/local/etc/send-fio/${i}
 done
 
@@ -96,16 +96,16 @@ if [ -r /etc/rc.conf ]; then
 fi
 
 set -e
-. /usr/local/share/spacevm/fio-subr/color.subr
-. /usr/local/share/spacevm/fio-subr/system.subr
-. /usr/local/share/spacevm/fio-subr/network.subr
+. /usr/local/share/myb/fio-subr/color.subr
+. /usr/local/share/myb/fio-subr/system.subr
+. /usr/local/share/myb/fio-subr/network.subr
 set +e
 
-if [ -r "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr" ]; then
+if [ -r "/usr/local/share/myb/fio-subr/${OPSYS}.subr" ]; then
 	[ "${SENDFIO_DEBUG}" != "0" ] && echo "Info: OS-specific subr found: ${OPSYS}.subr" 1>&2
-	. "/usr/local/share/spacevm/fio-subr/${OPSYS}.subr"
+	. "/usr/local/share/myb/fio-subr/${OPSYS}.subr"
 else
-	. /usr/local/share/spacevm/fio-subr/GenericOS.subr
+	. /usr/local/share/myb/fio-subr/GenericOS.subr
 fi
 
 for i in ${MYARG}; do

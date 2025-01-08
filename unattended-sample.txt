@@ -3,7 +3,7 @@
 #export DESTROY_DISK_DATA=1
 #export FIO_DIRECTORY="/dev/ada2"
 # or:
-#spacevm-perf-fio-run /dev/nda0
+#myb-perf-fio-run /dev/nda0
 
 # INET-less
 export FIO_OFFLINE_MODE=1
@@ -25,7 +25,7 @@ export FIO_AUTO_RWMIXREAD=50
 #export SENDFIO_DEBUG=1
 #export SENDFIO_DEBUG=0
 
-spacevm-perf-fio-run
+myb-perf-fio-run
 
 # or bench custom mount-point/FS:
-#spacevm-perf-fio-run /tmp/my-mnt-pt
+#myb-perf-fio-run /tmp/my-mnt-pt
