@@ -51,6 +51,9 @@ SENDFIO_DEBUG      - уровень вербозности ( '1' по дефол
 myb-perf-fio-run /mnt/tmp
 ```
 
+# для полностью неинтерактивной работы, укажите значение FIO_AUTO_RWMIXREAD, например:
+export FIO_AUTO_RWMIXREAD=50
+
 
 ## Hooks
 
