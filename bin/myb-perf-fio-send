@@ -15,6 +15,10 @@ set +e
 [ -z "${FIO_AUTO_POST}" ] && FIO_AUTO_POST="1"
 [ "${FIO_AUTO_POST}" = "0" ] && exit 0
 
+if [ -n "${SENDFIO_SEND_RESULT}" ]; then
+	echo "alternative result via SENDFIO_SEND_RESULT: ${SENDFIO_SEND_RESULT}"
+	[ ! -r "${SENDFIO_SEND_RESULT}" ] && err 1 "${pgm}: error, not found: ${SENDFIO_SEND_RESULT}"
+fi
 #
 #data="/tmp/x5.tgz"
 #curl -sS -X POST -H "Content-Type: application/gzip" --data-binary "@$data" ${checkin_server}/scripts/report_system.php?token=ssssssssssssssssss
