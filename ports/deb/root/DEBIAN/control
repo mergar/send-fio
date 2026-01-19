@@ -6,6 +6,6 @@ Depends: jq, curl, fio, binutils, bsdextrautils
 Provides: mybee-sendfio
 Section: devel
 Priority: extra
-Homepage: http://fio.beeru.online
+Homepage: http://fio.convectix.com
 Description: MyBee sendfio files.
   (c) 2022-2026 MyBee Project.
