@@ -86,6 +86,8 @@ IODEPTH
 RWMIXREAD
 "
 
+[ -z "${FIO_OFFLINE_MODE}" ] && FIO_OFFLINE_MODE=0
+
 # AUTO_XXX vars ?
 [ -n "${env_file}" -a -r "${env_file}" ] && . ${env_file}
 
